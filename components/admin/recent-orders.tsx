@@ -109,9 +109,16 @@ export function RecentOrdersDashboard() {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <div className="space-y-3">
+          <div className="divide-y divide-gray-100">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse" />
+              <div key={i} className="py-3 first:pt-0 space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="shimmer-bg h-4 w-32 rounded-md" />
+                  <div className="shimmer-bg h-5 w-20 rounded-full ml-auto" />
+                  <div className="shimmer-bg h-4 w-14 rounded-md" />
+                </div>
+                <div className="shimmer-bg h-3 w-24 rounded-md" />
+              </div>
             ))}
           </div>
         ) : orders.length === 0 ? (

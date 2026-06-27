@@ -258,7 +258,22 @@ export default function AdminMenuPage() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-64 bg-gray-100 rounded-xl animate-pulse" />
+            <div key={i} className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+              <div className="shimmer-bg h-40 w-full rounded-none" />
+              <div className="p-4 space-y-2.5">
+                <div className="flex justify-between items-center">
+                  <div className="shimmer-bg h-4 w-28 rounded-md" />
+                  <div className="shimmer-bg h-4 w-12 rounded-md" />
+                </div>
+                <div className="shimmer-bg h-3 w-full rounded-md" />
+                <div className="shimmer-bg h-3 w-2/3 rounded-md" />
+                <div className="flex gap-2 pt-1">
+                  <div className="shimmer-bg h-7 flex-1 rounded-md" />
+                  <div className="shimmer-bg h-7 w-7 rounded-md" />
+                  <div className="shimmer-bg h-7 w-7 rounded-md" />
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       ) : items.length === 0 ? (

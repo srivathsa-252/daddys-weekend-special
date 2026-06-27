@@ -168,7 +168,15 @@ export default function AdminOrdersPage() {
       {loading ? (
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />
+            <div key={i} className="bg-white border border-gray-100 rounded-xl p-5 space-y-2.5">
+              <div className="flex items-center gap-3">
+                <div className="shimmer-bg h-4 w-36 rounded-md" />
+                <div className="shimmer-bg h-5 w-20 rounded-full" />
+                <div className="shimmer-bg h-5 w-16 rounded-full" />
+                <div className="ml-auto shimmer-bg h-4 w-14 rounded-md" />
+              </div>
+              <div className="shimmer-bg h-3 w-64 rounded-md" />
+            </div>
           ))}
         </div>
       ) : orders.length === 0 ? (
