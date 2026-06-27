@@ -1,4 +1,6 @@
 import { Suspense } from "react";
+
+export const dynamic = "force-dynamic";
 import { MenuSection } from "@/components/menu-section";
 import { MenuGridSkeleton } from "@/components/menu-grid-skeleton";
 
