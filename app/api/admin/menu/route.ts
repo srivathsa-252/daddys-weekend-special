@@ -4,7 +4,6 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sanitize } from "@/lib/sanitize";
 import { menuItemSchema } from "@/utils/validators";
-import { destroyImage } from "@/lib/cloudinary";
 
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
@@ -128,15 +127,6 @@ export async function DELETE(req: NextRequest) {
   } else {
     // Hard delete
     const item = await prisma.menuItem.findUnique({ where: { id } });
-    if (item?.image && item.image.includes("res.cloudinary.com")) {
-      try {
-        const publicId = item.image.split("/").slice(-2).join("/").split(".")[0];
-        await destroyImage(publicId);
-      } catch {
-        // Log but don't fail
-        console.error("Cloudinary delete failed for item", id);
-      }
-    }
     await prisma.menuItem.delete({ where: { id } });
     return NextResponse.json({ message: "Item permanently deleted." });
   }

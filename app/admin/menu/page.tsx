@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Plus, Edit2, Trash2, Eye, EyeOff, Loader2, AlertTriangle } from "lucide-react";
+import { Plus, Edit2, Trash2, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,9 +43,7 @@ export default function AdminMenuPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const activeCount = items.filter((i) => i.isAvailable).length;
   const atLimit = activeCount >= 10;
@@ -59,21 +57,6 @@ export default function AdminMenuPage() {
   }
 
   useEffect(() => { fetchItems(); }, []);
-
-  async function handleImageUpload(file: File) {
-    setUploading(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    const res = await fetch("/api/admin/menu/upload", { method: "POST", body: fd });
-    const json = await res.json();
-    setUploading(false);
-    if (res.ok) {
-      setForm((f) => ({ ...f, image: json.url }));
-      toast.success("Image uploaded");
-    } else {
-      toast.error(json.error ?? "Upload failed");
-    }
-  }
 
   async function handleSave() {
     setFormError(null);
@@ -216,24 +199,15 @@ export default function AdminMenuPage() {
               </div>
             </div>
 
-            {/* Image upload */}
+            {/* Image URL */}
             <div className="space-y-2">
-              <Label>Image</Label>
+              <Label>Image URL</Label>
               {form.image && (
                 <div className="relative w-full h-40 rounded-lg overflow-hidden mb-2">
                   <Image src={form.image} alt="Preview" fill className="object-cover" />
                 </div>
               )}
-              <div className="flex gap-2">
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleImageUpload(e.target.files[0])} />
-                <Button type="button" variant="secondary" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
-                  {uploading ? <><Loader2 className="w-3 h-3 animate-spin" /> Uploading...</> : "Upload Image"}
-                </Button>
-                {form.image && <Input value={form.image} onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))} placeholder="Or paste URL" className="text-xs" />}
-              </div>
-              {!form.image && (
-                <Input value={form.image} onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))} placeholder="Paste Cloudinary URL" />
-              )}
+              <Input value={form.image} onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))} placeholder="Paste image URL (e.g. https://...)" />
             </div>
 
             <div className="flex items-center gap-4">
