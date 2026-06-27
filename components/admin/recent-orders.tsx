@@ -129,81 +129,76 @@ export function RecentOrdersDashboard() {
             <p className="text-gray-400 text-sm py-4">No orders yet.</p>
           ) : (
             <div className="divide-y divide-gray-100">
-              {orders.map((order) => {
-                const canCancel = order.status === "PENDING" || order.status === "CONFIRMED";
-                return (
-                  <div key={order.id} className="py-3 first:pt-0 last:pb-0">
-                    <div className="flex items-start gap-2">
-                      <span className="text-blue-600 font-bold font-mono text-sm flex-shrink-0 mt-0.5">
-                        {displayRef(order.orderNumber)}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-gray-900 font-medium text-sm truncate">
-                          {order.customerName}
-                        </p>
-                        <p className="text-gray-400 text-xs mt-0.5">{formatDate(order.createdAt)}</p>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-blue-600 font-semibold text-sm whitespace-nowrap">
-                          {formatCurrency(Number(order.total))}
-                        </span>
-                        <Badge variant={orderBadgeVariant(order.status)}>
-                          {statusLabel(order.status)}
-                        </Badge>
-                      </div>
-                    </div>
+              {orders.map((order) => (
+                <div key={order.id} className="py-3 first:pt-0 last:pb-0 flex items-center gap-3">
+                  {/* Ref */}
+                  <span className="text-blue-600 font-bold font-mono text-sm flex-shrink-0 w-12">
+                    {displayRef(order.orderNumber)}
+                  </span>
 
-                    {/* Action buttons */}
-                    {(order.status === "PENDING" ||
-                      order.status === "CONFIRMED" ||
-                      order.status === "PARTNER_ASSIGNED") && (
-                      <div className="flex gap-2 mt-2">
-                        {order.status === "PENDING" && (
-                          <Button
-                            size="sm"
-                            className="text-xs h-7 px-3"
-                            onClick={() => handleAction(order.id, "CONFIRM")}
-                            disabled={!!actionLoading}
-                          >
-                            {actionLoading === order.id + "CONFIRM" ? "..." : "Accept"}
-                          </Button>
-                        )}
-                        {order.status === "CONFIRMED" && (
-                          <Button
-                            size="sm"
-                            className="text-xs h-7 px-3"
-                            onClick={() => setAssignModal({ id: order.id, orderNumber: order.orderNumber })}
-                            disabled={!!actionLoading}
-                          >
-                            Assign Partner
-                          </Button>
-                        )}
-                        {order.status === "PARTNER_ASSIGNED" && (
-                          <Button
-                            size="sm"
-                            className="text-xs h-7 px-3"
-                            onClick={() => handleAction(order.id, "MARK_DELIVERED")}
-                            disabled={!!actionLoading}
-                          >
-                            {actionLoading === order.id + "MARK_DELIVERED" ? "..." : "Mark Delivered"}
-                          </Button>
-                        )}
-                        {canCancel && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-xs h-7 px-2 text-red-500 hover:text-red-600 hover:bg-red-50"
-                            onClick={() => handleAction(order.id, "CANCEL")}
-                            disabled={!!actionLoading}
-                          >
-                            {actionLoading === order.id + "CANCEL" ? "..." : "Cancel"}
-                          </Button>
-                        )}
-                      </div>
-                    )}
+                  {/* Customer + date */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-gray-900 font-medium text-sm truncate">{order.customerName}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <Badge variant={orderBadgeVariant(order.status)}>
+                        {statusLabel(order.status)}
+                      </Badge>
+                      <span className="text-gray-400 text-xs">{formatDate(order.createdAt)}</span>
+                    </div>
                   </div>
-                );
-              })}
+
+                  {/* Pending action — empty when delivered/cancelled */}
+                  <div className="flex-shrink-0 flex items-center gap-1.5">
+                    {order.status === "PENDING" && (
+                      <>
+                        <Button
+                          size="sm"
+                          className="h-7 px-2.5 text-xs"
+                          onClick={() => handleAction(order.id, "CONFIRM")}
+                          disabled={!!actionLoading}
+                        >
+                          {actionLoading === order.id + "CONFIRM" ? "…" : "Accept"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs text-red-500 hover:bg-red-50 hover:text-red-600"
+                          onClick={() => handleAction(order.id, "CANCEL")}
+                          disabled={!!actionLoading}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    )}
+                    {order.status === "CONFIRMED" && (
+                      <Button
+                        size="sm"
+                        className="h-7 px-2.5 text-xs"
+                        onClick={() => setAssignModal({ id: order.id, orderNumber: order.orderNumber })}
+                        disabled={!!actionLoading}
+                      >
+                        Assign Partner
+                      </Button>
+                    )}
+                    {order.status === "PARTNER_ASSIGNED" && (
+                      <Button
+                        size="sm"
+                        className="h-7 px-2.5 text-xs"
+                        onClick={() => handleAction(order.id, "MARK_DELIVERED")}
+                        disabled={!!actionLoading}
+                      >
+                        {actionLoading === order.id + "MARK_DELIVERED" ? "…" : "Mark Delivered"}
+                      </Button>
+                    )}
+                    {/* DELIVERED / CANCELLED — intentionally empty */}
+                  </div>
+
+                  {/* Total */}
+                  <span className="text-blue-600 font-semibold text-sm whitespace-nowrap flex-shrink-0">
+                    {formatCurrency(Number(order.total))}
+                  </span>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>

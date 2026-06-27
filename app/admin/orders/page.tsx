@@ -81,6 +81,69 @@ function orderBadgeVariant(
   return "warning";
 }
 
+// ── Inline pending-action buttons shown directly in each row ──────────────────
+function PendingAction({
+  order,
+  actionLoading,
+  onAction,
+  onAssign,
+}: {
+  order: Order;
+  actionLoading: string | null;
+  onAction: (id: string, action: Action) => void;
+  onAssign: (id: string, num: number) => void;
+}) {
+  if (order.status === "PENDING") {
+    return (
+      <div className="flex items-center gap-1.5">
+        <Button
+          size="sm"
+          className="h-7 px-3 text-xs"
+          onClick={() => onAction(order.id, "CONFIRM")}
+          disabled={!!actionLoading}
+        >
+          {actionLoading === order.id + "CONFIRM" ? "…" : "Accept"}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 px-2 text-xs text-red-500 hover:bg-red-50 hover:text-red-600"
+          onClick={() => onAction(order.id, "CANCEL")}
+          disabled={!!actionLoading}
+        >
+          {actionLoading === order.id + "CANCEL" ? "…" : "Cancel"}
+        </Button>
+      </div>
+    );
+  }
+  if (order.status === "CONFIRMED") {
+    return (
+      <Button
+        size="sm"
+        className="h-7 px-3 text-xs"
+        onClick={() => onAssign(order.id, order.orderNumber)}
+        disabled={!!actionLoading}
+      >
+        Assign Partner
+      </Button>
+    );
+  }
+  if (order.status === "PARTNER_ASSIGNED") {
+    return (
+      <Button
+        size="sm"
+        className="h-7 px-3 text-xs"
+        onClick={() => onAction(order.id, "MARK_DELIVERED")}
+        disabled={!!actionLoading}
+      >
+        {actionLoading === order.id + "MARK_DELIVERED" ? "…" : "Mark Delivered"}
+      </Button>
+    );
+  }
+  // DELIVERED or CANCELLED — nothing pending
+  return null;
+}
+
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,6 +184,10 @@ export default function AdminOrdersPage() {
     } else {
       toast.error(json.error ?? "Action failed");
     }
+  }
+
+  function openAssign(id: string, num: number) {
+    setAssignModal({ id, orderNumber: num });
   }
 
   return (
@@ -182,7 +249,8 @@ export default function AdminOrdersPage() {
                   <div className="shimmer-bg h-4 w-10 rounded-md" />
                   <div className="shimmer-bg h-4 w-32 rounded-md" />
                   <div className="shimmer-bg h-5 w-20 rounded-full" />
-                  <div className="ml-auto shimmer-bg h-4 w-14 rounded-md" />
+                  <div className="ml-auto shimmer-bg h-7 w-20 rounded-lg" />
+                  <div className="shimmer-bg h-4 w-14 rounded-md" />
                 </div>
                 <div className="shimmer-bg h-3 w-64 rounded-md" />
               </div>
@@ -195,44 +263,69 @@ export default function AdminOrdersPage() {
             {orders.map((order) => (
               <Card key={order.id}>
                 <CardContent className="p-0">
-                  {/* Order row */}
-                  <button
-                    onClick={() => setExpanded(expanded === order.id ? null : order.id)}
-                    className="w-full flex items-center gap-3 p-5 text-left hover:bg-gray-50 transition-colors rounded-xl"
-                  >
-                    <span className="text-blue-600 font-bold font-mono text-sm flex-shrink-0">
-                      {displayRef(order.orderNumber)}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-gray-900 font-semibold text-sm">{order.customerName}</p>
-                        <Badge variant={orderBadgeVariant(order.status)}>
-                          {STATUS_LABELS[order.status] ?? order.status}
-                        </Badge>
+
+                  {/* ── Collapsed row ─────────────────────────────────────── */}
+                  <div className="flex items-center gap-3 p-4 sm:p-5">
+
+                    {/* Ref + customer info — clicking this area toggles expand */}
+                    <div
+                      className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+                      onClick={() => setExpanded(expanded === order.id ? null : order.id)}
+                    >
+                      <span className="text-blue-600 font-bold font-mono text-sm flex-shrink-0 w-12">
+                        {displayRef(order.orderNumber)}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-gray-900 font-semibold text-sm">{order.customerName}</p>
+                          <Badge variant={orderBadgeVariant(order.status)}>
+                            {STATUS_LABELS[order.status] ?? order.status}
+                          </Badge>
+                        </div>
+                        <p className="text-gray-400 text-xs mt-0.5 truncate">
+                          {order.customerEmail} · {formatDate(order.createdAt)}
+                        </p>
                       </div>
-                      <p className="text-gray-400 text-xs mt-0.5">
-                        {order.customerEmail} · {order.customerPhone} · {formatDate(order.createdAt)}
-                      </p>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-blue-600 font-bold text-sm">
+
+                    {/* Pending action — stopPropagation so clicking doesn't expand */}
+                    <div
+                      className="flex-shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <PendingAction
+                        order={order}
+                        actionLoading={actionLoading}
+                        onAction={handleAction}
+                        onAssign={openAssign}
+                      />
+                    </div>
+
+                    {/* Total + chevron — clicking this toggles expand */}
+                    <div
+                      className="flex items-center gap-2 flex-shrink-0 cursor-pointer"
+                      onClick={() => setExpanded(expanded === order.id ? null : order.id)}
+                    >
+                      <span className="text-blue-600 font-bold text-sm hidden sm:block">
                         {formatCurrency(Number(order.total))}
                       </span>
-                      {expanded === order.id ? (
-                        <ChevronUp className="w-4 h-4 text-gray-400" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 text-gray-400" />
-                      )}
+                      {expanded === order.id
+                        ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                        : <ChevronDown className="w-4 h-4 text-gray-400" />}
                     </div>
-                  </button>
+                  </div>
 
-                  {/* Expanded detail */}
+                  {/* ── Expanded detail ────────────────────────────────────── */}
                   {expanded === order.id && (
                     <div className="px-5 pb-5 border-t border-gray-100 pt-4 space-y-4">
-                      <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
                         <div>
                           <p className="text-gray-400 text-xs uppercase tracking-widest mb-1">Order Ref</p>
-                          <p className="text-blue-600 font-bold font-mono text-lg">{displayRef(order.orderNumber)}</p>
+                          <p className="text-blue-600 font-bold font-mono text-xl">{displayRef(order.orderNumber)}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400 text-xs uppercase tracking-widest mb-1">Total</p>
+                          <p className="text-gray-900 font-bold">{formatCurrency(Number(order.total))}</p>
                         </div>
                         <div>
                           <p className="text-gray-400 text-xs uppercase tracking-widest mb-1">Payment</p>
@@ -242,13 +335,18 @@ export default function AdminOrdersPage() {
                         </div>
                       </div>
 
+                      <div>
+                        <p className="text-gray-400 text-xs uppercase tracking-widest mb-1">Contact</p>
+                        <p className="text-gray-700 text-sm">{order.customerEmail} · {order.customerPhone}</p>
+                      </div>
+
                       {/* Partner details if assigned */}
                       {order.partnerName && (
-                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 space-y-1 text-sm">
+                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 space-y-1">
                           <p className="text-blue-600 font-semibold text-xs uppercase tracking-widest mb-2">Delivery Partner</p>
-                          <p className="text-gray-700"><span className="text-gray-400">Name: </span>{order.partnerName}</p>
-                          <p className="text-gray-700"><span className="text-gray-400">Phone: </span>{order.partnerPhone}</p>
-                          <p className="text-gray-700"><span className="text-gray-400">ETA: </span>{order.estimatedDelivery}</p>
+                          <p className="text-gray-700 text-sm"><span className="text-gray-400">Name: </span>{order.partnerName}</p>
+                          <p className="text-gray-700 text-sm"><span className="text-gray-400">Phone: </span>{order.partnerPhone}</p>
+                          <p className="text-gray-700 text-sm"><span className="text-gray-400">ETA: </span>{order.estimatedDelivery}</p>
                         </div>
                       )}
 
@@ -273,66 +371,13 @@ export default function AdminOrdersPage() {
                         </div>
                       </div>
 
-                      {/* Action buttons */}
-                      {order.status === "PENDING" && (
-                        <div className="flex gap-3 flex-wrap">
-                          <Button
-                            size="sm"
-                            onClick={() => handleAction(order.id, "CONFIRM")}
-                            disabled={!!actionLoading}
-                          >
-                            {actionLoading === order.id + "CONFIRM" ? "Confirming..." : "Accept Order"}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-red-500 hover:bg-red-50 hover:text-red-600"
-                            onClick={() => handleAction(order.id, "CANCEL")}
-                            disabled={!!actionLoading}
-                          >
-                            {actionLoading === order.id + "CANCEL" ? "Cancelling..." : "Cancel"}
-                          </Button>
-                        </div>
-                      )}
-
-                      {order.status === "CONFIRMED" && (
-                        <div className="flex gap-3 flex-wrap">
-                          <Button
-                            size="sm"
-                            onClick={() => setAssignModal({ id: order.id, orderNumber: order.orderNumber })}
-                            disabled={!!actionLoading}
-                          >
-                            Assign Partner
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-red-500 hover:bg-red-50 hover:text-red-600"
-                            onClick={() => handleAction(order.id, "CANCEL")}
-                            disabled={!!actionLoading}
-                          >
-                            {actionLoading === order.id + "CANCEL" ? "Cancelling..." : "Cancel"}
-                          </Button>
-                        </div>
-                      )}
-
-                      {order.status === "PARTNER_ASSIGNED" && (
-                        <Button
-                          size="sm"
-                          onClick={() => handleAction(order.id, "MARK_DELIVERED")}
-                          disabled={!!actionLoading}
-                        >
-                          {actionLoading === order.id + "MARK_DELIVERED" ? "Updating..." : "Mark Delivered"}
-                        </Button>
-                      )}
-
+                      {/* Status indicators for terminal states */}
                       {order.status === "DELIVERED" && (
                         <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium">
                           <span className="w-2 h-2 rounded-full bg-emerald-500" />
                           Delivered
                         </div>
                       )}
-
                       {order.status === "CANCELLED" && (
                         <div className="flex items-center gap-2 text-red-400 text-sm font-medium">
                           <span className="w-2 h-2 rounded-full bg-red-400" />
@@ -341,6 +386,7 @@ export default function AdminOrdersPage() {
                       )}
                     </div>
                   )}
+
                 </CardContent>
               </Card>
             ))}
