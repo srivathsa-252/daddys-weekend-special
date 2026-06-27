@@ -13,6 +13,7 @@ export async function MenuSection() {
     description: item.description,
     price: Number(item.price),
     image: item.image,
+    isVeg: item.isVeg,
     isAvailable: item.isAvailable,
     displayOrder: item.displayOrder,
   }));
