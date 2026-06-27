@@ -31,6 +31,7 @@ model MenuItem {
 
 model Order {
   id                     String      @id @default(cuid())
+  orderNumber            Int         @default(autoincrement())
   customerName           String
   customerEmail          String
   customerPhone          String
