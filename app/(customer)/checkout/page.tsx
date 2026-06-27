@@ -5,18 +5,13 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Elements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
 import { useCart } from "@/hooks/use-cart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
-import { PaymentForm } from "@/components/payment-form";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 const checkoutSchema = z.object({
   customerName: z.string().min(2, "Name must be at least 2 characters").max(100),
@@ -29,8 +24,6 @@ type CheckoutFormData = z.infer<typeof checkoutSchema>;
 export default function CheckoutPage() {
   const { items, total, clearCart } = useCart();
   const router = useRouter();
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [orderId, setOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +48,7 @@ export default function CheckoutPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/payment-intent", {
+      const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -68,8 +61,8 @@ export default function CheckoutPage() {
         setError(json.error || "Something went wrong");
         return;
       }
-      setClientSecret(json.clientSecret);
-      setOrderId(json.orderId);
+      clearCart();
+      router.push(`/order-success?orderId=${json.orderId}`);
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -85,64 +78,32 @@ export default function CheckoutPage() {
       <h1 className="font-display text-2xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">Checkout</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 md:gap-8">
-        {/* Left: Form + Payment */}
-        <div className="lg:col-span-3 space-y-6">
-          {!clientSecret ? (
-            <form onSubmit={handleSubmit(onSubmit)} className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 space-y-5">
-              <h2 className="font-display text-lg md:text-xl font-semibold text-gray-900 mb-2">Your Details</h2>
-              <div className="space-y-2">
-                <Label htmlFor="customerName">Full Name</Label>
-                <Input id="customerName" placeholder="John Smith" {...register("customerName")} />
-                {errors.customerName && <p className="text-red-500 text-xs">{errors.customerName.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="customerEmail">Email Address</Label>
-                <Input id="customerEmail" type="email" placeholder="john@example.com" {...register("customerEmail")} />
-                {errors.customerEmail && <p className="text-red-500 text-xs">{errors.customerEmail.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="customerPhone">Phone Number</Label>
-                <Input id="customerPhone" placeholder="+44 7700 900000" {...register("customerPhone")} />
-                {errors.customerPhone && <p className="text-red-500 text-xs">{errors.customerPhone.message}</p>}
-              </div>
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-sm">{error}</div>
-              )}
-              <Button type="submit" size="lg" className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-md" disabled={loading}>
-                {loading ? "Processing..." : "Continue to Payment"}
-              </Button>
-            </form>
-          ) : (
-            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
-              <h2 className="font-display text-lg md:text-xl font-semibold text-gray-900 mb-5">Payment</h2>
-              <Elements
-                stripe={stripePromise}
-                options={{
-                  clientSecret,
-                  appearance: {
-                    theme: "stripe",
-                    variables: {
-                      colorPrimary: "#2563EB",
-                      colorBackground: "#FFFFFF",
-                      colorText: "#111827",
-                      colorDanger: "#ef4444",
-                      fontFamily: "system-ui, sans-serif",
-                      borderRadius: "8px",
-                    },
-                  },
-                }}
-              >
-                <PaymentForm
-                  orderId={orderId!}
-                  clientSecret={clientSecret}
-                  onSuccess={() => {
-                    clearCart();
-                    router.push(`/order-success?orderId=${orderId}`);
-                  }}
-                />
-              </Elements>
+        {/* Left: Form */}
+        <div className="lg:col-span-3">
+          <form onSubmit={handleSubmit(onSubmit)} className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 space-y-5">
+            <h2 className="font-display text-lg md:text-xl font-semibold text-gray-900 mb-2">Your Details</h2>
+            <div className="space-y-2">
+              <Label htmlFor="customerName">Full Name</Label>
+              <Input id="customerName" placeholder="John Smith" {...register("customerName")} />
+              {errors.customerName && <p className="text-red-500 text-xs">{errors.customerName.message}</p>}
             </div>
-          )}
+            <div className="space-y-2">
+              <Label htmlFor="customerEmail">Email Address</Label>
+              <Input id="customerEmail" type="email" placeholder="john@example.com" {...register("customerEmail")} />
+              {errors.customerEmail && <p className="text-red-500 text-xs">{errors.customerEmail.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="customerPhone">Phone Number</Label>
+              <Input id="customerPhone" placeholder="+44 7700 900000" {...register("customerPhone")} />
+              {errors.customerPhone && <p className="text-red-500 text-xs">{errors.customerPhone.message}</p>}
+            </div>
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-sm">{error}</div>
+            )}
+            <Button type="submit" size="lg" className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-md" disabled={loading}>
+              {loading ? "Placing Order..." : "Place Order"}
+            </Button>
+          </form>
         </div>
 
         {/* Right: Order Summary */}
@@ -161,6 +122,7 @@ export default function CheckoutPage() {
               <span className="text-gray-900">Total</span>
               <span className="text-blue-600 text-lg">{formatCurrency(total)}</span>
             </div>
+            <p className="text-xs text-gray-400 mt-3">Payment collected on delivery / in person.</p>
           </div>
         </div>
       </div>

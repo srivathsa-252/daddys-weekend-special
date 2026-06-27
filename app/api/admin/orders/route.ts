@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { stripe } from "@/lib/stripe";
 import { sendEmail } from "@/lib/email";
 import { orderConfirmedTemplate, orderCancelledTemplate } from "@/emails/templates";
 
@@ -66,7 +65,6 @@ export async function PATCH(req: NextRequest) {
       data: { status: "CONFIRMED" },
     });
 
-    // Email (non-blocking)
     sendEmail(
       order.customerEmail,
       "Your Order is Confirmed 🎉",
@@ -86,32 +84,18 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (body.action === "CANCEL") {
-    let paymentStatus = order.paymentStatus;
-    let refundTriggered = false;
-
-    if (order.paymentStatus === "PAID" && order.stripePaymentIntentId) {
-      try {
-        await stripe.refunds.create({ payment_intent: order.stripePaymentIntentId });
-        paymentStatus = "REFUNDED";
-        refundTriggered = true;
-      } catch (err) {
-        console.error("Stripe refund failed for order", id, err);
-      }
-    }
-
     const updated = await prisma.order.update({
       where: { id },
-      data: { status: "CANCELLED", paymentStatus },
+      data: { status: "CANCELLED" },
     });
 
-    // Cancellation email (non-blocking)
     sendEmail(
       order.customerEmail,
       "Your Order Has Been Cancelled",
       orderCancelledTemplate({
         customerName: order.customerName,
         orderId: order.id,
-        refunded: refundTriggered,
+        refunded: false,
       })
     ).catch((err) => console.error("Cancel email failed for order", id, err));
 
