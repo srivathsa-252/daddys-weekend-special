@@ -44,29 +44,29 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A1128] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#F9FAFB] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-full bg-gold-DEFAULT/10 border border-gold-DEFAULT/30 flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-6 h-6 text-gold-DEFAULT" />
+          <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-6 h-6 text-blue-600" />
           </div>
-          <h1 className="font-display text-3xl font-bold text-white">Admin Login</h1>
-          <p className="text-white/40 text-sm mt-2">Daddy's Weekend Special</p>
+          <h1 className="font-sans text-3xl font-bold text-gray-900">Admin Login</h1>
+          <p className="text-gray-400 text-sm mt-2">Daddy's Kitchen</p>
         </div>
-        <div className="bg-[#0F1B3D] border border-white/5 rounded-xl p-8">
+        <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-8">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" type="email" placeholder="admin@daddysweekendspecial.com" {...register("email")} />
-              {errors.email && <p className="text-red-400 text-xs">{errors.email.message}</p>}
+              {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input id="password" type="password" placeholder="••••••••" {...register("password")} />
-              {errors.password && <p className="text-red-400 text-xs">{errors.password.message}</p>}
+              {errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}
             </div>
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-400 text-sm">{error}</div>
+              <div className="bg-red-50 border border-red-100 rounded-lg p-3 text-red-600 text-sm">{error}</div>
             )}
             <Button type="submit" size="lg" className="w-full" disabled={loading}>
               {loading ? "Signing in..." : "Sign In"}

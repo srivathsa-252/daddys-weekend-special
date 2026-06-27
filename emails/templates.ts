@@ -52,7 +52,7 @@ export function orderConfirmedTemplate({ customerName, orderId, items, total }: 
       (i) => `
     <tr>
       <td style="padding:8px 0;color:rgba(255,255,255,0.8);font-size:14px;">${i.name} × ${i.quantity}</td>
-      <td style="padding:8px 0;color:#F0A500;font-size:14px;text-align:right;font-weight:600;">$${(i.price * i.quantity).toFixed(2)}</td>
+      <td style="padding:8px 0;color:#F0A500;font-size:14px;text-align:right;font-weight:600;">£${(i.price * i.quantity).toFixed(2)}</td>
     </tr>`
     )
     .join("");
@@ -73,7 +73,7 @@ export function orderConfirmedTemplate({ customerName, orderId, items, total }: 
       ${itemRows}
       <tr>
         <td style="padding-top:12px;border-top:1px solid rgba(255,255,255,0.1);color:white;font-weight:700;font-size:15px;">Total</td>
-        <td style="padding-top:12px;border-top:1px solid rgba(255,255,255,0.1);color:#F0A500;font-weight:700;font-size:18px;text-align:right;">$${total.toFixed(2)}</td>
+        <td style="padding-top:12px;border-top:1px solid rgba(255,255,255,0.1);color:#F0A500;font-weight:700;font-size:18px;text-align:right;">£${total.toFixed(2)}</td>
       </tr>
     </table>
 

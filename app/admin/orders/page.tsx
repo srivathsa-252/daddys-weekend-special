@@ -90,8 +90,8 @@ export default function AdminOrdersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-3xl font-bold text-white">Orders</h1>
-          <p className="text-white/40 text-sm mt-1">{orders.length} orders found</p>
+          <h1 className="font-sans text-3xl font-bold text-gray-900">Orders</h1>
+          <p className="text-gray-400 text-sm mt-1">{orders.length} orders found</p>
         </div>
         <Button variant="secondary" size="sm" onClick={fetchOrders} disabled={loading}>
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
@@ -100,15 +100,15 @@ export default function AdminOrdersPage() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex gap-1 bg-[#0F1B3D] border border-white/5 rounded-lg p-1">
+        <div className="flex gap-1 bg-gray-100 border border-gray-200 rounded-lg p-1">
           {STATUS_TABS.map((tab) => (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                 filter === tab
-                  ? "bg-gold-DEFAULT text-navy-900"
-                  : "text-white/50 hover:text-white"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-900"
               }`}
             >
               {tab}
@@ -116,7 +116,7 @@ export default function AdminOrdersPage() {
           ))}
         </div>
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
             placeholder="Search name, email, phone..."
             value={search}
@@ -130,11 +130,11 @@ export default function AdminOrdersPage() {
       {loading ? (
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-20 bg-[#0F1B3D] rounded-xl shimmer-bg" />
+            <div key={i} className="h-20 bg-gray-100 rounded-xl animate-pulse" />
           ))}
         </div>
       ) : orders.length === 0 ? (
-        <div className="text-center py-20 text-white/30">No orders found.</div>
+        <div className="text-center py-20 text-gray-400">No orders found.</div>
       ) : (
         <div className="space-y-3">
           {orders.map((order) => (
@@ -143,41 +143,41 @@ export default function AdminOrdersPage() {
                 {/* Order row */}
                 <button
                   onClick={() => setExpanded(expanded === order.id ? null : order.id)}
-                  className="w-full flex items-center gap-4 p-5 text-left hover:bg-white/2 transition-colors rounded-xl"
+                  className="w-full flex items-center gap-4 p-5 text-left hover:bg-gray-50 transition-colors rounded-xl"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 flex-wrap">
-                      <p className="text-white font-semibold text-sm">{order.customerName}</p>
+                      <p className="text-gray-900 font-semibold text-sm">{order.customerName}</p>
                       <Badge variant={orderBadgeVariant(order.status)}>{order.status}</Badge>
                       <Badge variant={paymentBadgeVariant(order.paymentStatus)}>{order.paymentStatus}</Badge>
                     </div>
-                    <p className="text-white/40 text-xs mt-1">{order.customerEmail} · {order.customerPhone} · {formatDate(order.createdAt)}</p>
+                    <p className="text-gray-400 text-xs mt-1">{order.customerEmail} · {order.customerPhone} · {formatDate(order.createdAt)}</p>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="text-gold-DEFAULT font-bold">{formatCurrency(Number(order.total))}</span>
-                    {expanded === order.id ? <ChevronUp className="w-4 h-4 text-white/40" /> : <ChevronDown className="w-4 h-4 text-white/40" />}
+                    <span className="text-blue-600 font-bold">{formatCurrency(Number(order.total))}</span>
+                    {expanded === order.id ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
                   </div>
                 </button>
 
                 {/* Expanded detail */}
                 {expanded === order.id && (
-                  <div className="px-5 pb-5 border-t border-white/5 pt-4 space-y-4">
+                  <div className="px-5 pb-5 border-t border-gray-100 pt-4 space-y-4">
                     <div>
-                      <p className="text-white/40 text-xs uppercase tracking-widest mb-2">Order ID</p>
-                      <p className="text-white font-mono text-sm">{order.id}</p>
+                      <p className="text-gray-400 text-xs uppercase tracking-widest mb-2">Order ID</p>
+                      <p className="text-gray-700 font-mono text-sm">{order.id}</p>
                     </div>
                     <div>
-                      <p className="text-white/40 text-xs uppercase tracking-widest mb-2">Items</p>
+                      <p className="text-gray-400 text-xs uppercase tracking-widest mb-2">Items</p>
                       <div className="space-y-1.5">
                         {order.items.map((item) => (
                           <div key={item.id} className="flex justify-between text-sm">
-                            <span className="text-white/70">{item.menuItem?.name ?? "Item"} × {item.quantity}</span>
-                            <span className="text-white">{formatCurrency(Number(item.price) * item.quantity)}</span>
+                            <span className="text-gray-600">{item.menuItem?.name ?? "Item"} × {item.quantity}</span>
+                            <span className="text-gray-900">{formatCurrency(Number(item.price) * item.quantity)}</span>
                           </div>
                         ))}
-                        <div className="flex justify-between text-sm font-bold border-t border-white/10 pt-2 mt-2">
-                          <span className="text-white">Total</span>
-                          <span className="text-gold-DEFAULT">{formatCurrency(Number(order.total))}</span>
+                        <div className="flex justify-between text-sm font-bold border-t border-gray-100 pt-2 mt-2">
+                          <span className="text-gray-900">Total</span>
+                          <span className="text-blue-600">{formatCurrency(Number(order.total))}</span>
                         </div>
                       </div>
                     </div>
@@ -196,7 +196,6 @@ export default function AdminOrdersPage() {
                           variant="destructive"
                           onClick={() => handleAction(order.id, "CANCEL")}
                           disabled={!!actionLoading}
-                          className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
                         >
                           {actionLoading === order.id + "CANCEL" ? "Cancelling..." : "Cancel Order"}
                         </Button>
@@ -208,7 +207,6 @@ export default function AdminOrdersPage() {
                         variant="destructive"
                         onClick={() => handleAction(order.id, "CANCEL")}
                         disabled={!!actionLoading}
-                        className="bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30"
                       >
                         {actionLoading === order.id + "CANCEL" ? "Cancelling..." : "Cancel & Refund"}
                       </Button>

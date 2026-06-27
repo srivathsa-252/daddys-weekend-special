@@ -54,34 +54,49 @@ export async function POST(req: NextRequest) {
   const totalCents = Math.round(total * 100);
 
   // Create Stripe PaymentIntent
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: totalCents,
-    currency: "usd",
-    metadata: { customerEmail: sanitize(customerEmail) },
-  });
+  let paymentIntent;
+  try {
+    paymentIntent = await stripe.paymentIntents.create({
+      amount: totalCents,
+      currency: "gbp",
+      automatic_payment_methods: { enabled: true },
+      metadata: { customerEmail: sanitize(customerEmail) },
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Stripe error";
+    console.error("[payment-intent] Stripe error:", err);
+    return NextResponse.json({ error: message }, { status: 502 });
+  }
 
   // Create Order + OrderItems in DB
-  const order = await prisma.order.create({
-    data: {
-      customerName: sanitize(customerName),
-      customerEmail: sanitize(customerEmail),
-      customerPhone: sanitize(customerPhone),
-      total: total,
-      status: "PENDING",
-      paymentStatus: "PENDING",
-      stripePaymentIntentId: paymentIntent.id,
-      items: {
-        create: items.map((item) => {
-          const menuItem = menuItems.find((m) => m.id === item.menuItemId)!;
-          return {
-            menuItemId: item.menuItemId,
-            quantity: item.quantity,
-            price: menuItem.price,
-          };
-        }),
+  let order;
+  try {
+    order = await prisma.order.create({
+      data: {
+        customerName: sanitize(customerName),
+        customerEmail: sanitize(customerEmail),
+        customerPhone: sanitize(customerPhone),
+        total: total,
+        status: "PENDING",
+        paymentStatus: "PENDING",
+        stripePaymentIntentId: paymentIntent.id,
+        items: {
+          create: items.map((item) => {
+            const menuItem = menuItems.find((m) => m.id === item.menuItemId)!;
+            return {
+              menuItemId: item.menuItemId,
+              quantity: item.quantity,
+              price: menuItem.price,
+            };
+          }),
+        },
       },
-    },
-  });
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Database error";
+    console.error("[payment-intent] DB error:", err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 
   return NextResponse.json({
     clientSecret: paymentIntent.client_secret,

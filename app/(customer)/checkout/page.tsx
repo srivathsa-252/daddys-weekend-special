@@ -102,7 +102,7 @@ export default function CheckoutPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="customerPhone">Phone Number</Label>
-                <Input id="customerPhone" placeholder="+1 (555) 000-0000" {...register("customerPhone")} />
+                <Input id="customerPhone" placeholder="+44 7700 900000" {...register("customerPhone")} />
                 {errors.customerPhone && <p className="text-red-500 text-xs">{errors.customerPhone.message}</p>}
               </div>
               {error && (
