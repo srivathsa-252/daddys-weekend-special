@@ -1,40 +1,31 @@
 export const dynamic = "force-dynamic";
 
 import { prisma } from "@/lib/prisma";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatCurrency } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
 import { ClipboardList, CheckCircle, PoundSterling, Clock } from "lucide-react";
+import { RecentOrdersDashboard } from "@/components/admin/recent-orders";
 
 export default async function AdminDashboard() {
-  const [pendingCount, confirmedCount, orders] = await Promise.all([
+  const [pendingCount, activeCount, totalCount, revenueResult] = await Promise.all([
     prisma.order.count({ where: { status: "PENDING" } }),
-    prisma.order.count({ where: { status: "CONFIRMED" } }),
-    prisma.order.findMany({
-      orderBy: { createdAt: "desc" },
-      take: 5,
-      include: { items: true },
+    prisma.order.count({
+      where: { status: { in: ["CONFIRMED", "PARTNER_ASSIGNED", "OUT_FOR_DELIVERY"] } },
+    }),
+    prisma.order.count(),
+    prisma.order.aggregate({
+      _sum: { total: true },
+      where: { status: "DELIVERED" },
     }),
   ]);
-
-  const revenueResult = await prisma.order.aggregate({
-    _sum: { total: true },
-    where: { paymentStatus: "PAID" },
-  });
   const revenue = Number(revenueResult._sum.total ?? 0);
 
   const stats = [
     { label: "Pending Orders", value: pendingCount, icon: Clock, color: "text-amber-500" },
-    { label: "Confirmed Orders", value: confirmedCount, icon: CheckCircle, color: "text-emerald-600" },
+    { label: "Active Orders", value: activeCount, icon: CheckCircle, color: "text-emerald-600" },
     { label: "Total Revenue", value: formatCurrency(revenue), icon: PoundSterling, color: "text-blue-600" },
-    { label: "Total Orders", value: orders.length, icon: ClipboardList, color: "text-blue-600" },
+    { label: "Total Orders", value: totalCount, icon: ClipboardList, color: "text-blue-600" },
   ];
-
-  const statusVariant = (status: string) => {
-    if (status === "CONFIRMED") return "success";
-    if (status === "CANCELLED") return "destructive";
-    return "warning";
-  };
 
   return (
     <div className="space-y-8">
@@ -57,33 +48,7 @@ export default async function AdminDashboard() {
         ))}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-gray-900">Recent Orders</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {orders.length === 0 ? (
-            <p className="text-gray-400 text-sm py-4">No orders yet.</p>
-          ) : (
-            <div className="space-y-3">
-              {orders.map((order) => (
-                <div key={order.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
-                  <div>
-                    <p className="text-gray-900 font-medium text-sm">{order.customerName}</p>
-                    <p className="text-gray-400 text-xs mt-0.5">{order.customerEmail} · {formatDate(order.createdAt)}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-blue-600 font-semibold text-sm">{formatCurrency(Number(order.total))}</span>
-                    <Badge variant={statusVariant(order.status) as "success" | "destructive" | "warning"}>
-                      {order.status}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <RecentOrdersDashboard />
     </div>
   );
 }

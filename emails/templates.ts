@@ -84,6 +84,50 @@ export function orderConfirmedTemplate({ customerName, orderId, items, total }: 
   `);
 }
 
+interface PartnerAssignedParams {
+  customerName: string;
+  orderId: string;
+}
+
+export function partnerAssignedTemplate({ customerName, orderId }: PartnerAssignedParams): string {
+  return baseLayout(`
+    <h2 style="margin:0 0 8px;color:#F0A500;font-size:28px;font-weight:700;">Partner Assigned!</h2>
+    <p style="color:rgba(255,255,255,0.7);margin:0 0 24px;font-size:15px;">Hi ${customerName}, a delivery partner has been assigned to your order.</p>
+
+    <div style="background:rgba(240,165,0,0.08);border:1px solid rgba(240,165,0,0.2);border-radius:10px;padding:16px 20px;margin-bottom:24px;">
+      <p style="margin:0;color:rgba(255,255,255,0.5);font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Order Number</p>
+      <p style="margin:4px 0 0;color:#F0A500;font-size:18px;font-weight:700;font-family:monospace;">${orderId}</p>
+    </div>
+
+    <p style="color:rgba(255,255,255,0.6);font-size:14px;line-height:1.6;">
+      Your order is being prepared and a delivery partner is on standby. We'll send another update once your order is out for delivery.
+    </p>
+    <p style="color:rgba(255,255,255,0.4);font-size:13px;margin-top:16px;">— The Daddy's Weekend Special Team</p>
+  `);
+}
+
+interface OutForDeliveryParams {
+  customerName: string;
+  orderId: string;
+}
+
+export function outForDeliveryTemplate({ customerName, orderId }: OutForDeliveryParams): string {
+  return baseLayout(`
+    <h2 style="margin:0 0 8px;color:#F0A500;font-size:28px;font-weight:700;">Out for Delivery 🚗</h2>
+    <p style="color:rgba(255,255,255,0.7);margin:0 0 24px;font-size:15px;">Hi ${customerName}, your order is on its way!</p>
+
+    <div style="background:rgba(240,165,0,0.08);border:1px solid rgba(240,165,0,0.2);border-radius:10px;padding:16px 20px;margin-bottom:24px;">
+      <p style="margin:0;color:rgba(255,255,255,0.5);font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Order Number</p>
+      <p style="margin:4px 0 0;color:#F0A500;font-size:18px;font-weight:700;font-family:monospace;">${orderId}</p>
+    </div>
+
+    <p style="color:rgba(255,255,255,0.6);font-size:14px;line-height:1.6;">
+      Your delivery partner is heading to you now. Please be ready to receive your order. Enjoy your meal!
+    </p>
+    <p style="color:rgba(255,255,255,0.4);font-size:13px;margin-top:16px;">— The Daddy's Weekend Special Team</p>
+  `);
+}
+
 interface CancelledParams {
   customerName: string;
   orderId: string;

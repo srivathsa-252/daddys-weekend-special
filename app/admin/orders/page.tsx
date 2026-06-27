@@ -9,7 +9,16 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
-type OrderStatus = "ALL" | "PENDING" | "CONFIRMED" | "CANCELLED";
+type OrderStatus =
+  | "ALL"
+  | "PENDING"
+  | "CONFIRMED"
+  | "PARTNER_ASSIGNED"
+  | "OUT_FOR_DELIVERY"
+  | "DELIVERED"
+  | "CANCELLED";
+
+type Action = "CONFIRM" | "CANCEL" | "ASSIGN_PARTNER" | "OUT_FOR_DELIVERY" | "MARK_DELIVERED";
 
 interface OrderItem {
   id: string;
@@ -24,23 +33,53 @@ interface Order {
   customerEmail: string;
   customerPhone: string;
   total: number;
-  status: "PENDING" | "CONFIRMED" | "CANCELLED";
+  status: Exclude<OrderStatus, "ALL">;
   paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
   createdAt: string;
   items: OrderItem[];
 }
 
-const STATUS_TABS: OrderStatus[] = ["ALL", "PENDING", "CONFIRMED", "CANCELLED"];
+const STATUS_TABS: OrderStatus[] = [
+  "ALL",
+  "PENDING",
+  "CONFIRMED",
+  "PARTNER_ASSIGNED",
+  "OUT_FOR_DELIVERY",
+  "DELIVERED",
+  "CANCELLED",
+];
 
-function paymentBadgeVariant(ps: Order["paymentStatus"]) {
+const STATUS_LABELS: Record<string, string> = {
+  ALL: "All",
+  PENDING: "Pending",
+  CONFIRMED: "Confirmed",
+  PARTNER_ASSIGNED: "Partner Assigned",
+  OUT_FOR_DELIVERY: "Out for Delivery",
+  DELIVERED: "Delivered",
+  CANCELLED: "Cancelled",
+};
+
+const ACTION_MESSAGES: Record<Action, string> = {
+  CONFIRM: "Order confirmed & email sent",
+  CANCEL: "Order cancelled",
+  ASSIGN_PARTNER: "Partner assigned & email sent",
+  OUT_FOR_DELIVERY: "Out for delivery — email sent",
+  MARK_DELIVERED: "Order marked as delivered",
+};
+
+function paymentBadgeVariant(ps: Order["paymentStatus"]): "success" | "destructive" | "warning" {
   if (ps === "PAID") return "success";
   if (ps === "FAILED" || ps === "REFUNDED") return "destructive";
   return "warning";
 }
 
-function orderBadgeVariant(status: Order["status"]) {
-  if (status === "CONFIRMED") return "success";
+function orderBadgeVariant(
+  status: Order["status"]
+): "success" | "destructive" | "warning" | "default" | "secondary" {
+  if (status === "CONFIRMED" || status === "DELIVERED") return "success";
   if (status === "CANCELLED") return "destructive";
+  if (status === "PARTNER_ASSIGNED") return "default";
+  if (status === "OUT_FOR_DELIVERY") return "warning";
   return "warning";
 }
 
@@ -68,7 +107,7 @@ export default function AdminOrdersPage() {
     return () => clearTimeout(t);
   }, [fetchOrders]);
 
-  async function handleAction(orderId: string, action: "CONFIRM" | "CANCEL") {
+  async function handleAction(orderId: string, action: Action) {
     setActionLoading(orderId + action);
     const res = await fetch(`/api/admin/orders?id=${orderId}`, {
       method: "PATCH",
@@ -77,9 +116,8 @@ export default function AdminOrdersPage() {
     });
     const json = await res.json();
     setActionLoading(null);
-
     if (res.ok) {
-      toast.success(action === "CONFIRM" ? "Order confirmed & email sent" : "Order cancelled");
+      toast.success(ACTION_MESSAGES[action]);
       fetchOrders();
     } else {
       toast.error(json.error ?? "Action failed");
@@ -100,18 +138,18 @@ export default function AdminOrdersPage() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex gap-1 bg-gray-100 border border-gray-200 rounded-lg p-1">
+        <div className="flex gap-1 bg-gray-100 border border-gray-200 rounded-lg p-1 overflow-x-auto flex-shrink-0">
           {STATUS_TABS.map((tab) => (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
                 filter === tab
                   ? "bg-blue-600 text-white shadow-sm"
                   : "text-gray-500 hover:text-gray-900"
               }`}
             >
-              {tab}
+              {STATUS_LABELS[tab]}
             </button>
           ))}
         </div>
@@ -148,14 +186,26 @@ export default function AdminOrdersPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 flex-wrap">
                       <p className="text-gray-900 font-semibold text-sm">{order.customerName}</p>
-                      <Badge variant={orderBadgeVariant(order.status)}>{order.status}</Badge>
-                      <Badge variant={paymentBadgeVariant(order.paymentStatus)}>{order.paymentStatus}</Badge>
+                      <Badge variant={orderBadgeVariant(order.status)}>
+                        {STATUS_LABELS[order.status] ?? order.status}
+                      </Badge>
+                      <Badge variant={paymentBadgeVariant(order.paymentStatus)}>
+                        {order.paymentStatus}
+                      </Badge>
                     </div>
-                    <p className="text-gray-400 text-xs mt-1">{order.customerEmail} · {order.customerPhone} · {formatDate(order.createdAt)}</p>
+                    <p className="text-gray-400 text-xs mt-1">
+                      {order.customerEmail} · {order.customerPhone} · {formatDate(order.createdAt)}
+                    </p>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    <span className="text-blue-600 font-bold">{formatCurrency(Number(order.total))}</span>
-                    {expanded === order.id ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                    <span className="text-blue-600 font-bold">
+                      {formatCurrency(Number(order.total))}
+                    </span>
+                    {expanded === order.id ? (
+                      <ChevronUp className="w-4 h-4 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    )}
                   </div>
                 </button>
 
@@ -163,27 +213,36 @@ export default function AdminOrdersPage() {
                 {expanded === order.id && (
                   <div className="px-5 pb-5 border-t border-gray-100 pt-4 space-y-4">
                     <div>
-                      <p className="text-gray-400 text-xs uppercase tracking-widest mb-2">Order ID</p>
-                      <p className="text-gray-700 font-mono text-sm">{order.id}</p>
+                      <p className="text-gray-400 text-xs uppercase tracking-widest mb-2">
+                        Order ID
+                      </p>
+                      <p className="text-gray-700 font-mono text-sm break-all">{order.id}</p>
                     </div>
                     <div>
                       <p className="text-gray-400 text-xs uppercase tracking-widest mb-2">Items</p>
                       <div className="space-y-1.5">
                         {order.items.map((item) => (
                           <div key={item.id} className="flex justify-between text-sm">
-                            <span className="text-gray-600">{item.menuItem?.name ?? "Item"} × {item.quantity}</span>
-                            <span className="text-gray-900">{formatCurrency(Number(item.price) * item.quantity)}</span>
+                            <span className="text-gray-600">
+                              {item.menuItem?.name ?? "Item"} × {item.quantity}
+                            </span>
+                            <span className="text-gray-900">
+                              {formatCurrency(Number(item.price) * item.quantity)}
+                            </span>
                           </div>
                         ))}
                         <div className="flex justify-between text-sm font-bold border-t border-gray-100 pt-2 mt-2">
                           <span className="text-gray-900">Total</span>
-                          <span className="text-blue-600">{formatCurrency(Number(order.total))}</span>
+                          <span className="text-blue-600">
+                            {formatCurrency(Number(order.total))}
+                          </span>
                         </div>
                       </div>
                     </div>
 
+                    {/* Action buttons */}
                     {order.status === "PENDING" && (
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 flex-wrap">
                         <Button
                           size="sm"
                           onClick={() => handleAction(order.id, "CONFIRM")}
@@ -193,7 +252,8 @@ export default function AdminOrdersPage() {
                         </Button>
                         <Button
                           size="sm"
-                          variant="destructive"
+                          variant="ghost"
+                          className="text-red-500 hover:bg-red-50 hover:text-red-600"
                           onClick={() => handleAction(order.id, "CANCEL")}
                           disabled={!!actionLoading}
                         >
@@ -201,15 +261,66 @@ export default function AdminOrdersPage() {
                         </Button>
                       </div>
                     )}
+
                     {order.status === "CONFIRMED" && (
+                      <div className="flex gap-3 flex-wrap">
+                        <Button
+                          size="sm"
+                          onClick={() => handleAction(order.id, "ASSIGN_PARTNER")}
+                          disabled={!!actionLoading}
+                        >
+                          {actionLoading === order.id + "ASSIGN_PARTNER"
+                            ? "Assigning..."
+                            : "Assign Partner"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-500 hover:bg-red-50 hover:text-red-600"
+                          onClick={() => handleAction(order.id, "CANCEL")}
+                          disabled={!!actionLoading}
+                        >
+                          {actionLoading === order.id + "CANCEL" ? "Cancelling..." : "Cancel Order"}
+                        </Button>
+                      </div>
+                    )}
+
+                    {order.status === "PARTNER_ASSIGNED" && (
                       <Button
                         size="sm"
-                        variant="destructive"
-                        onClick={() => handleAction(order.id, "CANCEL")}
+                        onClick={() => handleAction(order.id, "OUT_FOR_DELIVERY")}
                         disabled={!!actionLoading}
                       >
-                        {actionLoading === order.id + "CANCEL" ? "Cancelling..." : "Cancel & Refund"}
+                        {actionLoading === order.id + "OUT_FOR_DELIVERY"
+                          ? "Updating..."
+                          : "Mark Out for Delivery"}
                       </Button>
+                    )}
+
+                    {order.status === "OUT_FOR_DELIVERY" && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleAction(order.id, "MARK_DELIVERED")}
+                        disabled={!!actionLoading}
+                      >
+                        {actionLoading === order.id + "MARK_DELIVERED"
+                          ? "Updating..."
+                          : "Mark Delivered"}
+                      </Button>
+                    )}
+
+                    {order.status === "DELIVERED" && (
+                      <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                        Delivered
+                      </div>
+                    )}
+
+                    {order.status === "CANCELLED" && (
+                      <div className="flex items-center gap-2 text-red-500 text-sm font-medium">
+                        <span className="w-2 h-2 rounded-full bg-red-400" />
+                        Cancelled
+                      </div>
                     )}
                   </div>
                 )}
