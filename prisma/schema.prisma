@@ -31,7 +31,7 @@ model MenuItem {
 
 model Order {
   id                     String      @id @default(cuid())
-  orderNumber            Int         @default(autoincrement())
+  orderNumber            Int         @unique
   customerName           String
   customerEmail          String
   customerPhone          String
@@ -39,6 +39,9 @@ model Order {
   status                 String      @default("PENDING")
   paymentStatus          String      @default("PENDING")
   stripePaymentIntentId  String?     @unique
+  partnerName            String?
+  partnerPhone           String?
+  estimatedDelivery      String?
   createdAt              DateTime    @default(now())
   updatedAt              DateTime    @updatedAt
   items                  OrderItem[]

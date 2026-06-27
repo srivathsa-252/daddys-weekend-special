@@ -31,6 +31,15 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(order);
 }
 
+async function generateOrderNumber(): Promise<number> {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const num = Math.floor(1000 + Math.random() * 9000);
+    const existing = await prisma.order.findFirst({ where: { orderNumber: num }, select: { id: true } });
+    if (!existing) return num;
+  }
+  throw new Error("Unable to generate unique order number");
+}
+
 export async function POST(req: NextRequest) {
   const ip = getIP(req);
   const { success } = await checkRateLimit(ip);
@@ -71,8 +80,11 @@ export async function POST(req: NextRequest) {
     return sum + Number(menuItem.price) * item.quantity;
   }, 0);
 
+  const orderNumber = await generateOrderNumber();
+
   const order = await prisma.order.create({
     data: {
+      orderNumber,
       customerName: sanitize(customerName),
       customerEmail: sanitize(customerEmail),
       customerPhone: sanitize(customerPhone),

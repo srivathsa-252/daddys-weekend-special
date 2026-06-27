@@ -39,14 +39,18 @@ function baseLayout(content: string): string {
 </html>`;
 }
 
+function orderRef(orderNumber: number): string {
+  return `#${String(orderNumber).padStart(4, "0")}`;
+}
+
 interface ConfirmedParams {
   customerName: string;
-  orderId: string;
+  orderNumber: number;
   items: { name: string; quantity: number; price: number }[];
   total: number;
 }
 
-export function orderConfirmedTemplate({ customerName, orderId, items, total }: ConfirmedParams): string {
+export function orderConfirmedTemplate({ customerName, orderNumber, items, total }: ConfirmedParams): string {
   const itemRows = items
     .map(
       (i) => `
@@ -62,8 +66,8 @@ export function orderConfirmedTemplate({ customerName, orderId, items, total }: 
     <p style="color:rgba(255,255,255,0.7);margin:0 0 24px;font-size:15px;">Hi ${customerName}, great news — your order has been confirmed!</p>
 
     <div style="background:rgba(240,165,0,0.08);border:1px solid rgba(240,165,0,0.2);border-radius:10px;padding:16px 20px;margin-bottom:24px;">
-      <p style="margin:0;color:rgba(255,255,255,0.5);font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Order Number</p>
-      <p style="margin:4px 0 0;color:#F0A500;font-size:18px;font-weight:700;font-family:monospace;">${orderId}</p>
+      <p style="margin:0;color:rgba(255,255,255,0.5);font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Order Reference</p>
+      <p style="margin:4px 0 0;color:#F0A500;font-size:28px;font-weight:700;font-family:monospace;">${orderRef(orderNumber)}</p>
     </div>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
@@ -78,7 +82,7 @@ export function orderConfirmedTemplate({ customerName, orderId, items, total }: 
     </table>
 
     <p style="color:rgba(255,255,255,0.6);font-size:14px;line-height:1.6;">
-      Thank you for dining with us. We look forward to serving you an exceptional meal. If you have any special requests or questions, please don't hesitate to reach out.
+      Thank you for dining with us. We'll notify you once a delivery partner is assigned to your order.
     </p>
     <p style="color:rgba(255,255,255,0.4);font-size:13px;margin-top:16px;">— The Daddy's Weekend Special Team</p>
   `);
@@ -86,75 +90,108 @@ export function orderConfirmedTemplate({ customerName, orderId, items, total }: 
 
 interface PartnerAssignedParams {
   customerName: string;
-  orderId: string;
+  orderNumber: number;
+  partnerName: string;
+  partnerPhone: string;
+  estimatedDelivery: string;
 }
 
-export function partnerAssignedTemplate({ customerName, orderId }: PartnerAssignedParams): string {
+export function partnerAssignedTemplate({ customerName, orderNumber, partnerName, partnerPhone, estimatedDelivery }: PartnerAssignedParams): string {
   return baseLayout(`
-    <h2 style="margin:0 0 8px;color:#F0A500;font-size:28px;font-weight:700;">Partner Assigned!</h2>
-    <p style="color:rgba(255,255,255,0.7);margin:0 0 24px;font-size:15px;">Hi ${customerName}, a delivery partner has been assigned to your order.</p>
+    <h2 style="margin:0 0 8px;color:#F0A500;font-size:28px;font-weight:700;">Partner Assigned! 🚗</h2>
+    <p style="color:rgba(255,255,255,0.7);margin:0 0 24px;font-size:15px;">Hi ${customerName}, a delivery partner has been assigned to your order and is on the way!</p>
 
-    <div style="background:rgba(240,165,0,0.08);border:1px solid rgba(240,165,0,0.2);border-radius:10px;padding:16px 20px;margin-bottom:24px;">
-      <p style="margin:0;color:rgba(255,255,255,0.5);font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Order Number</p>
-      <p style="margin:4px 0 0;color:#F0A500;font-size:18px;font-weight:700;font-family:monospace;">${orderId}</p>
+    <div style="background:rgba(240,165,0,0.08);border:1px solid rgba(240,165,0,0.2);border-radius:10px;padding:16px 20px;margin-bottom:20px;">
+      <p style="margin:0;color:rgba(255,255,255,0.5);font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Order Reference</p>
+      <p style="margin:4px 0 0;color:#F0A500;font-size:28px;font-weight:700;font-family:monospace;">${orderRef(orderNumber)}</p>
+    </div>
+
+    <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:20px;margin-bottom:24px;">
+      <p style="margin:0 0 14px;color:white;font-weight:600;font-size:15px;">Your Delivery Partner</p>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:6px 0;color:rgba(255,255,255,0.5);font-size:13px;width:40%;">Name</td>
+          <td style="padding:6px 0;color:white;font-size:14px;font-weight:600;">${partnerName}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;color:rgba(255,255,255,0.5);font-size:13px;">Phone</td>
+          <td style="padding:6px 0;color:white;font-size:14px;font-weight:600;">${partnerPhone}</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 0;color:rgba(255,255,255,0.5);font-size:13px;">Est. Delivery</td>
+          <td style="padding:6px 0;color:#F0A500;font-size:14px;font-weight:600;">${estimatedDelivery}</td>
+        </tr>
+      </table>
     </div>
 
     <p style="color:rgba(255,255,255,0.6);font-size:14px;line-height:1.6;">
-      Your order is being prepared and a delivery partner is on standby. We'll send another update once your order is out for delivery.
+      Your food is on its way! Please be ready to receive your order. If you need to contact your delivery partner, use the number above.
     </p>
     <p style="color:rgba(255,255,255,0.4);font-size:13px;margin-top:16px;">— The Daddy's Weekend Special Team</p>
   `);
 }
 
-interface OutForDeliveryParams {
+interface DeliveredParams {
   customerName: string;
-  orderId: string;
+  orderNumber: number;
 }
 
-export function outForDeliveryTemplate({ customerName, orderId }: OutForDeliveryParams): string {
+export function orderDeliveredTemplate({ customerName, orderNumber }: DeliveredParams): string {
   return baseLayout(`
-    <h2 style="margin:0 0 8px;color:#F0A500;font-size:28px;font-weight:700;">Out for Delivery 🚗</h2>
-    <p style="color:rgba(255,255,255,0.7);margin:0 0 24px;font-size:15px;">Hi ${customerName}, your order is on its way!</p>
+    <h2 style="margin:0 0 8px;color:#F0A500;font-size:28px;font-weight:700;">Order Delivered! 🎉</h2>
+    <p style="color:rgba(255,255,255,0.7);margin:0 0 24px;font-size:15px;">Hi ${customerName}, we hope you enjoyed your meal!</p>
 
     <div style="background:rgba(240,165,0,0.08);border:1px solid rgba(240,165,0,0.2);border-radius:10px;padding:16px 20px;margin-bottom:24px;">
-      <p style="margin:0;color:rgba(255,255,255,0.5);font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Order Number</p>
-      <p style="margin:4px 0 0;color:#F0A500;font-size:18px;font-weight:700;font-family:monospace;">${orderId}</p>
+      <p style="margin:0;color:rgba(255,255,255,0.5);font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Order Reference</p>
+      <p style="margin:4px 0 0;color:#F0A500;font-size:28px;font-weight:700;font-family:monospace;">${orderRef(orderNumber)}</p>
     </div>
 
-    <p style="color:rgba(255,255,255,0.6);font-size:14px;line-height:1.6;">
-      Your delivery partner is heading to you now. Please be ready to receive your order. Enjoy your meal!
+    <div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:20px;margin-bottom:24px;text-align:center;">
+      <p style="margin:0 0 6px;color:#34d399;font-size:16px;font-weight:700;">✓ Successfully Delivered</p>
+      <p style="margin:0;color:rgba(255,255,255,0.6);font-size:13px;">Thank you for dining with Daddy's Weekend Special</p>
+    </div>
+
+    <p style="color:rgba(255,255,255,0.6);font-size:14px;line-height:1.6;margin-bottom:20px;">
+      We'd love to hear what you thought about your experience. Your feedback helps us serve you better!
     </p>
+
+    <div style="text-align:center;margin-bottom:24px;">
+      <a href="https://forms.gle/example" style="display:inline-block;background:#F0A500;color:#0A1128;font-weight:700;font-size:15px;padding:14px 32px;border-radius:10px;text-decoration:none;letter-spacing:0.02em;">
+        Leave a Review ⭐
+      </a>
+    </div>
+
     <p style="color:rgba(255,255,255,0.4);font-size:13px;margin-top:16px;">— The Daddy's Weekend Special Team</p>
   `);
 }
 
 interface CancelledParams {
   customerName: string;
-  orderId: string;
+  orderNumber: number;
   refunded: boolean;
 }
 
-export function orderCancelledTemplate({ customerName, orderId, refunded }: CancelledParams): string {
+export function orderCancelledTemplate({ customerName, orderNumber, refunded }: CancelledParams): string {
   return baseLayout(`
     <h2 style="margin:0 0 8px;color:white;font-size:28px;font-weight:700;">Order Cancelled</h2>
     <p style="color:rgba(255,255,255,0.7);margin:0 0 24px;font-size:15px;">Hi ${customerName}, we're sorry to inform you that your order has been cancelled.</p>
 
     <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:16px 20px;margin-bottom:24px;">
-      <p style="margin:0;color:rgba(255,255,255,0.5);font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Order Number</p>
-      <p style="margin:4px 0 0;color:white;font-size:18px;font-weight:700;font-family:monospace;">${orderId}</p>
+      <p style="margin:0;color:rgba(255,255,255,0.5);font-size:12px;text-transform:uppercase;letter-spacing:0.1em;">Order Reference</p>
+      <p style="margin:4px 0 0;color:white;font-size:28px;font-weight:700;font-family:monospace;">${orderRef(orderNumber)}</p>
     </div>
 
     ${
       refunded
         ? `<div style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:10px;padding:14px 18px;margin-bottom:24px;">
         <p style="margin:0;color:#34d399;font-size:14px;font-weight:600;">✓ Refund Initiated</p>
-        <p style="margin:6px 0 0;color:rgba(255,255,255,0.6);font-size:13px;">A full refund has been initiated and should appear on your account within 5–10 business days.</p>
+        <p style="margin:6px 0 0;color:rgba(255,255,255,0.6);font-size:13px;">A full refund has been initiated and should appear within 5–10 business days.</p>
       </div>`
         : ""
     }
 
     <p style="color:rgba(255,255,255,0.6);font-size:14px;line-height:1.6;">
-      We apologise for any inconvenience. If you have questions or would like to place a new order, please visit our website or contact us directly.
+      We apologise for any inconvenience. Please visit our website to place a new order.
     </p>
     <p style="color:rgba(255,255,255,0.4);font-size:13px;margin-top:16px;">— The Daddy's Weekend Special Team</p>
   `);

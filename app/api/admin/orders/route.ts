@@ -7,7 +7,7 @@ import {
   orderConfirmedTemplate,
   orderCancelledTemplate,
   partnerAssignedTemplate,
-  outForDeliveryTemplate,
+  orderDeliveredTemplate,
 } from "@/emails/templates";
 
 async function requireAdmin() {
@@ -53,7 +53,7 @@ export async function PATCH(req: NextRequest) {
   const id = searchParams.get("id");
   if (!id) return NextResponse.json({ error: "Order ID required" }, { status: 400 });
 
-  let body: { action: string };
+  let body: { action: string; partnerName?: string; partnerPhone?: string; estimatedDelivery?: string };
   try {
     body = await req.json();
   } catch {
@@ -74,10 +74,10 @@ export async function PATCH(req: NextRequest) {
 
     sendEmail(
       order.customerEmail,
-      "Your Order is Confirmed 🎉",
+      `Your Order ${order.orderNumber ? `#${String(order.orderNumber).padStart(4, "0")}` : ""} is Confirmed 🎉`,
       orderConfirmedTemplate({
         customerName: order.customerName,
-        orderId: order.id,
+        orderNumber: order.orderNumber!,
         items: order.items.map((i) => ({
           name: i.menuItem?.name ?? "Item",
           quantity: i.quantity,
@@ -101,7 +101,7 @@ export async function PATCH(req: NextRequest) {
       "Your Order Has Been Cancelled",
       orderCancelledTemplate({
         customerName: order.customerName,
-        orderId: order.id,
+        orderNumber: order.orderNumber!,
         refunded: false,
       })
     ).catch((err) => console.error("Cancel email failed for order", id, err));
@@ -110,31 +110,32 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (body.action === "ASSIGN_PARTNER") {
+    const { partnerName, partnerPhone, estimatedDelivery } = body;
+    if (!partnerName || !partnerPhone || !estimatedDelivery) {
+      return NextResponse.json({ error: "Partner name, phone, and estimated delivery are required" }, { status: 400 });
+    }
+
     const updated = await prisma.order.update({
       where: { id },
-      data: { status: "PARTNER_ASSIGNED" },
+      data: {
+        status: "PARTNER_ASSIGNED",
+        partnerName,
+        partnerPhone,
+        estimatedDelivery,
+      },
     });
 
     sendEmail(
       order.customerEmail,
-      "A Delivery Partner Has Been Assigned to Your Order",
-      partnerAssignedTemplate({ customerName: order.customerName, orderId: order.id })
+      "Your Delivery Partner is On the Way! 🚗",
+      partnerAssignedTemplate({
+        customerName: order.customerName,
+        orderNumber: order.orderNumber!,
+        partnerName,
+        partnerPhone,
+        estimatedDelivery,
+      })
     ).catch((err) => console.error("Partner assigned email failed for order", id, err));
-
-    return NextResponse.json(updated);
-  }
-
-  if (body.action === "OUT_FOR_DELIVERY") {
-    const updated = await prisma.order.update({
-      where: { id },
-      data: { status: "OUT_FOR_DELIVERY" },
-    });
-
-    sendEmail(
-      order.customerEmail,
-      "Your Order is Out for Delivery! 🚗",
-      outForDeliveryTemplate({ customerName: order.customerName, orderId: order.id })
-    ).catch((err) => console.error("Out for delivery email failed for order", id, err));
 
     return NextResponse.json(updated);
   }
@@ -144,6 +145,16 @@ export async function PATCH(req: NextRequest) {
       where: { id },
       data: { status: "DELIVERED" },
     });
+
+    sendEmail(
+      order.customerEmail,
+      "Your Order Has Been Delivered! 🎉",
+      orderDeliveredTemplate({
+        customerName: order.customerName,
+        orderNumber: order.orderNumber!,
+      })
+    ).catch((err) => console.error("Delivered email failed for order", id, err));
+
     return NextResponse.json(updated);
   }
 
