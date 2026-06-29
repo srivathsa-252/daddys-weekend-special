@@ -18,7 +18,7 @@ function baseLayout(title: string, content: string): string {
               Daddy's Weekend Special
             </h1>
             <p style="margin:5px 0 0;color:rgba(255,255,255,0.65);font-size:12px;letter-spacing:0.08em;text-transform:uppercase;">
-              Premium Weekend Dining
+              Weekend Dining
             </p>
           </td>
         </tr>

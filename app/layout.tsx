@@ -16,7 +16,7 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: "Daddy's Weekend Special",
-  description: "Premium weekend dining experience",
+  description: "Weekend dining experience",
 };
 
 export default function RootLayout({
