@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { sendEmail } from "@/lib/email";
 import {
   orderConfirmedTemplate,
@@ -104,7 +104,7 @@ export async function PATCH(req: NextRequest) {
     // Issue Stripe refund if the order was already paid
     if (order.paymentStatus === "PAID" && order.stripePaymentIntentId) {
       try {
-        await stripe.refunds.create({ payment_intent: order.stripePaymentIntentId });
+        await getStripe().refunds.create({ payment_intent: order.stripePaymentIntentId });
         refunded = true;
       } catch (err) {
         console.error("Stripe refund failed for order", id, err);

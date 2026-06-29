@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { sanitize } from "@/lib/sanitize";
 import { getIP } from "@/lib/utils";
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
   const amountInPence = Math.round(total * 100);
   const orderNumber = await generateOrderNumber();
 
-  const paymentIntent = await stripe.paymentIntents.create({
+  const paymentIntent = await getStripe().paymentIntents.create({
     amount: amountInPence,
     currency: "gbp",
     receipt_email: sanitize(customerEmail),
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
   });
 
   // Add orderId to metadata so webhook can correlate without a DB lookup by PI id
-  await stripe.paymentIntents.update(paymentIntent.id, {
+  await getStripe().paymentIntents.update(paymentIntent.id, {
     metadata: { ...paymentIntent.metadata, orderId: order.id },
   });
 
