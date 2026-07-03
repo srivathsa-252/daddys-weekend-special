@@ -6,18 +6,6 @@ import { sanitize } from "@/lib/sanitize";
 import { getIP } from "@/lib/utils";
 import { checkoutSchema } from "@/utils/validators";
 
-async function generateOrderNumber(): Promise<number> {
-  for (let attempt = 0; attempt < 20; attempt++) {
-    const num = Math.floor(1000 + Math.random() * 9000);
-    const existing = await prisma.order.findFirst({
-      where: { orderNumber: num },
-      select: { id: true },
-    });
-    if (!existing) return num;
-  }
-  throw new Error("Unable to generate unique order number");
-}
-
 export async function POST(req: NextRequest) {
   const ip = getIP(req);
   const { success } = await checkRateLimit(ip);
@@ -40,7 +28,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
-  const { customerName, customerEmail, customerPhone, items } = parsed.data;
+  const { customerName, customerEmail, customerPhone, addressLine1, city, postcode, items } = parsed.data;
 
   const menuItems = await prisma.menuItem.findMany({
     where: {
@@ -63,7 +51,6 @@ export async function POST(req: NextRequest) {
   }, 0);
 
   const amountInPence = Math.round(total * 100);
-  const orderNumber = await generateOrderNumber();
 
   const paymentIntent = await getStripe().paymentIntents.create({
     amount: amountInPence,
@@ -72,16 +59,17 @@ export async function POST(req: NextRequest) {
     metadata: {
       customerName: sanitize(customerName),
       customerEmail: sanitize(customerEmail),
-      orderNumber: String(orderNumber),
     },
   });
 
   const order = await prisma.order.create({
     data: {
-      orderNumber,
       customerName: sanitize(customerName),
       customerEmail: sanitize(customerEmail),
       customerPhone: sanitize(customerPhone),
+      addressLine1: sanitize(addressLine1),
+      city: sanitize(city),
+      postcode: sanitize(postcode),
       total,
       status: "PENDING",
       paymentStatus: "PENDING",
