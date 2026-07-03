@@ -41,7 +41,7 @@ Admin panel at **http://localhost:3000/admin**
 
 ## Database
 
-This project uses **PostgreSQL** via [Neon](https://neon.tech) (serverless Postgres). Set `DATABASE_URL` to your Neon connection string in `.env`.
+This project uses **PostgreSQL** via [Supabase](https://supabase.com). Set `DATABASE_URL` to your Supabase connection string in `.env` (find it in **Settings → Database → Connection string → URI**).
 
 | Command             | What it does                                      |
 |---------------------|---------------------------------------------------|
@@ -92,7 +92,7 @@ Copy `.env.example` → `.env` and fill in:
 
 | Variable                              | Required | Description                                              |
 |---------------------------------------|----------|----------------------------------------------------------|
-| `DATABASE_URL`                        | Yes      | Neon PostgreSQL connection string                        |
+| `DATABASE_URL`                        | Yes      | Supabase PostgreSQL connection string                    |
 | `NEXTAUTH_SECRET`                     | Yes      | Random secret — run `openssl rand -base64 32`            |
 | `NEXTAUTH_URL`                        | Yes      | `http://localhost:3000` locally                          |
 | `STRIPE_SECRET_KEY`                   | Yes      | Stripe secret key (`sk_test_...`)                        |
@@ -176,7 +176,7 @@ middleware.ts       # Protects /admin/* routes via NextAuth JWT role check
 
 - Next.js 15 (App Router) + TypeScript
 - Tailwind CSS + Shadcn-style components
-- Prisma ORM + PostgreSQL (Neon serverless)
+- Prisma ORM + PostgreSQL (Supabase)
 - NextAuth (Credentials + JWT)
 - Stripe (PaymentIntents + Webhooks)
 - Nodemailer

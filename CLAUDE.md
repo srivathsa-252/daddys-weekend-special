@@ -46,7 +46,7 @@ Next.js 15 App Router restaurant ordering app with two distinct user surfaces:
 
 ### Database
 
-PostgreSQL via Neon serverless, Prisma ORM. Key models: `User`, `MenuItem`, `Order`, `OrderItem`. `OrderItem.price` is a snapshot at order time (Decimal, not float). Cascade delete: deleting an Order removes its OrderItems.
+PostgreSQL via Supabase, Prisma ORM. Key models: `User`, `MenuItem`, `Order`, `OrderItem`. `OrderItem.price` is a snapshot at order time (Decimal, not float). Cascade delete: deleting an Order removes its OrderItems.
 
 ### Integrations
 
