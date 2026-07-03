@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getStripe } from "@/lib/stripe";
 import { sendEmail } from "@/lib/email";
 import {
   orderConfirmedTemplate,
@@ -68,13 +67,6 @@ export async function PATCH(req: NextRequest) {
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
   if (body.action === "CONFIRM") {
-    if (order.paymentStatus !== "PAID") {
-      return NextResponse.json(
-        { error: "Cannot confirm an order that has not been paid." },
-        { status: 400 }
-      );
-    }
-
     const updated = await prisma.order.update({
       where: { id },
       data: { status: "CONFIRMED" },
@@ -102,28 +94,9 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (body.action === "CANCEL") {
-    let refunded = false;
-
-    // Issue Stripe refund if the order was already paid
-    if (order.paymentStatus === "PAID" && order.stripePaymentIntentId) {
-      try {
-        await getStripe().refunds.create({ payment_intent: order.stripePaymentIntentId });
-        refunded = true;
-      } catch (err) {
-        console.error("Stripe refund failed for order", id, err);
-        return NextResponse.json(
-          { error: "Refund failed. Please issue it manually in Stripe dashboard." },
-          { status: 500 }
-        );
-      }
-    }
-
     const updated = await prisma.order.update({
       where: { id },
-      data: {
-        status: "CANCELLED",
-        paymentStatus: refunded ? "REFUNDED" : order.paymentStatus,
-      },
+      data: { status: "CANCELLED" },
     });
 
     sendEmail(
@@ -132,7 +105,7 @@ export async function PATCH(req: NextRequest) {
       orderCancelledTemplate({
         customerName: order.customerName,
         orderNumber: order.orderNumber!,
-        refunded,
+        refunded: false,
       })
     ).catch((err) => console.error("Cancel email failed for order", id, err));
 
