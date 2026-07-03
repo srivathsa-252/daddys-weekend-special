@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
-  const { customerName, customerEmail, customerPhone, items } = parsed.data;
+  const { customerName, customerEmail, customerPhone, addressLine1, city, postcode, items } = parsed.data;
 
   const menuItems = await prisma.menuItem.findMany({
     where: {
@@ -76,6 +76,9 @@ export async function POST(req: NextRequest) {
       customerName: sanitize(customerName),
       customerEmail: sanitize(customerEmail),
       customerPhone: sanitize(customerPhone),
+      addressLine1: sanitize(addressLine1),
+      city: sanitize(city),
+      postcode: sanitize(postcode),
       total,
       status: "PENDING",
       paymentStatus: "PENDING",
