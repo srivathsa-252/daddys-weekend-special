@@ -36,6 +36,9 @@ model Order {
   customerName           String
   customerEmail          String
   customerPhone          String
+  addressLine1           String
+  city                   String
+  postcode               String
   total                  Decimal
   status                 String      @default("PENDING")
   paymentStatus          String      @default("PENDING")

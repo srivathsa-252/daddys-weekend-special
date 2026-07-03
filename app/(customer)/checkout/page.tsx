@@ -17,6 +17,9 @@ const checkoutSchema = z.object({
   customerName: z.string().min(2, "Name must be at least 2 characters").max(100),
   customerEmail: z.string().email("Invalid email address"),
   customerPhone: z.string().regex(/^\+?[\d\s\-().]{7,20}$/, "Invalid phone number"),
+  addressLine1: z.string().min(3, "Address line 1 is required").max(200),
+  city: z.string().min(2, "City is required").max(100),
+  postcode: z.string().regex(/^[A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2}$/i, "Enter a valid UK postcode"),
 });
 
 type CheckoutFormData = z.infer<typeof checkoutSchema>;
@@ -96,6 +99,23 @@ export default function CheckoutPage() {
               <Label htmlFor="customerPhone">Phone Number</Label>
               <Input id="customerPhone" placeholder="+44 7700 900000" {...register("customerPhone")} />
               {errors.customerPhone && <p className="text-red-500 text-xs">{errors.customerPhone.message}</p>}
+            </div>
+
+            <h2 className="font-display text-lg md:text-xl font-semibold text-gray-900 pt-2">Delivery Address</h2>
+            <div className="space-y-2">
+              <Label htmlFor="addressLine1">Address Line 1</Label>
+              <Input id="addressLine1" placeholder="123 High Street" {...register("addressLine1")} />
+              {errors.addressLine1 && <p className="text-red-500 text-xs">{errors.addressLine1.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="city">City</Label>
+              <Input id="city" placeholder="Birmingham" {...register("city")} />
+              {errors.city && <p className="text-red-500 text-xs">{errors.city.message}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="postcode">Postcode</Label>
+              <Input id="postcode" placeholder="B1 1AA" {...register("postcode")} />
+              {errors.postcode && <p className="text-red-500 text-xs">{errors.postcode.message}</p>}
             </div>
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-sm">{error}</div>

@@ -84,6 +84,9 @@ export async function PATCH(req: NextRequest) {
           price: Number(i.price),
         })),
         total: Number(order.total),
+        addressLine1: order.addressLine1,
+        city: order.city,
+        postcode: order.postcode,
       })
     ).catch((err) => console.error("Confirm email failed for order", id, err));
 

@@ -63,9 +63,12 @@ interface ConfirmedParams {
   orderNumber: number;
   items: { name: string; quantity: number; price: number }[];
   total: number;
+  addressLine1: string;
+  city: string;
+  postcode: string;
 }
 
-export function orderConfirmedTemplate({ customerName, orderNumber, items, total }: ConfirmedParams): string {
+export function orderConfirmedTemplate({ customerName, orderNumber, items, total, addressLine1, city, postcode }: ConfirmedParams): string {
   const rows = items.map((i) => `
     <tr>
       <td style="padding:8px 0;color:#374151;font-size:14px;border-bottom:1px solid #F3F4F6;">${i.name} × ${i.quantity}</td>
@@ -80,6 +83,11 @@ export function orderConfirmedTemplate({ customerName, orderNumber, items, total
     </div>
 
     ${orderRefBox(orderNumber)}
+
+    <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:14px 20px;margin-bottom:24px;">
+      <p style="margin:0 0 4px;color:#6B7280;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">Delivery Address</p>
+      <p style="margin:0;color:#111827;font-size:14px;">${addressLine1}, ${city}, ${postcode}</p>
+    </div>
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
       <tr>

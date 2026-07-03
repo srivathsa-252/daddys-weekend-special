@@ -33,6 +33,9 @@ interface Order {
   customerName: string;
   customerEmail: string;
   customerPhone: string;
+  addressLine1: string;
+  city: string;
+  postcode: string;
   total: number;
   status: Exclude<OrderStatus, "ALL">;
   paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
@@ -338,6 +341,11 @@ export default function AdminOrdersPage() {
                       <div>
                         <p className="text-gray-400 text-xs uppercase tracking-widest mb-1">Contact</p>
                         <p className="text-gray-700 text-sm">{order.customerEmail} · {order.customerPhone}</p>
+                      </div>
+
+                      <div>
+                        <p className="text-gray-400 text-xs uppercase tracking-widest mb-1">Delivery Address</p>
+                        <p className="text-gray-700 text-sm">{order.addressLine1}, {order.city}, {order.postcode}</p>
                       </div>
 
                       {/* Partner details if assigned */}
