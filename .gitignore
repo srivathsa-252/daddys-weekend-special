@@ -19,3 +19,9 @@ dist/
 
 # OS
 .DS_Store
+
+# Local agent tooling
+.agents/
+.claude/
+.mcp.json
+skills-lock.json

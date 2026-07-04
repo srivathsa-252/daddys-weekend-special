@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CartClearer } from "@/components/cart-clearer";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ export default async function OrderSuccessPage({
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gray-50 flex items-center justify-center px-4 py-8">
+      <CartClearer />
       <div className="w-full max-w-sm">
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
           {/* Top green band */}

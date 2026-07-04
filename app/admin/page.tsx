@@ -7,15 +7,16 @@ import { ClipboardList, CheckCircle, PoundSterling, Clock } from "lucide-react";
 import { RecentOrdersDashboard } from "@/components/admin/recent-orders";
 
 export default async function AdminDashboard() {
+  const paid = { paymentStatus: { not: "PENDING" } } as const;
   const [pendingCount, activeCount, totalCount, revenueResult] = await Promise.all([
-    prisma.order.count({ where: { status: "PENDING" } }),
+    prisma.order.count({ where: { status: "PENDING", ...paid } }),
     prisma.order.count({
-      where: { status: { in: ["CONFIRMED", "PARTNER_ASSIGNED", "OUT_FOR_DELIVERY"] } },
+      where: { status: { in: ["CONFIRMED", "PARTNER_ASSIGNED", "OUT_FOR_DELIVERY"] }, ...paid },
     }),
-    prisma.order.count(),
+    prisma.order.count({ where: { ...paid } }),
     prisma.order.aggregate({
       _sum: { total: true },
-      where: { status: "DELIVERED" },
+      where: { status: "DELIVERED", ...paid },
     }),
   ]);
   const revenue = Number(revenueResult._sum.total ?? 0);
