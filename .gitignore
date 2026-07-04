@@ -25,3 +25,5 @@ dist/
 .claude/
 .mcp.json
 skills-lock.json
+.vercel
+.env*.local
