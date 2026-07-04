@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { loadStripe } from "@stripe/stripe-js";
-import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { useCart } from "@/hooks/use-cart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,19 +28,6 @@ const checkoutSchema = z.object({
 
 type CheckoutFormData = z.infer<typeof checkoutSchema>;
 
-const cardElementOptions = {
-  hidePostalCode: true,
-  style: {
-    base: {
-      fontSize: "14px",
-      color: "#111827",
-      fontFamily: "inherit",
-      "::placeholder": { color: "#9CA3AF" },
-    },
-    invalid: { color: "#EF4444" },
-  },
-};
-
 export default function CheckoutPage() {
   const { items } = useCart();
 
@@ -55,26 +42,18 @@ export default function CheckoutPage() {
     );
   }
 
-  return (
-    <Elements stripe={stripePromise}>
-      <CheckoutForm />
-    </Elements>
-  );
+  return <CheckoutFlow />;
 }
 
-function CheckoutForm() {
+function CheckoutFlow() {
   const { items, total, clearCart } = useCart();
   const router = useRouter();
-  const stripe = useStripe();
-  const elements = useElements();
 
   const [step, setStep] = useState<"info" | "payment">("info");
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [cardError, setCardError] = useState<string | null>(null);
 
   const {
     register,
@@ -108,36 +87,6 @@ function CheckoutForm() {
     } finally {
       setLoading(false);
     }
-  }
-
-  async function onPay() {
-    if (!stripe || !elements || !clientSecret) return;
-    const cardElement = elements.getElement(CardElement);
-    if (!cardElement) return;
-
-    setPaying(true);
-    setCardError(null);
-
-    const { error: stripeError } = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: {
-        card: cardElement,
-        billing_details: {
-          name: getValues("customerName"),
-          email: getValues("customerEmail"),
-          address: { postal_code: getValues("postcode") },
-        },
-      },
-      return_url: `${window.location.origin}/order-success?orderId=${orderId}`,
-    });
-
-    if (stripeError) {
-      setCardError(stripeError.message ?? "Payment failed. Please try again.");
-      setPaying(false);
-      return;
-    }
-
-    clearCart();
-    router.push(`/order-success?orderId=${orderId}`);
   }
 
   return (
@@ -194,45 +143,24 @@ function CheckoutForm() {
             </form>
           )}
 
-          {step === "payment" && (
-            <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="font-display text-lg md:text-xl font-semibold text-gray-900">Payment</h2>
-                <button
-                  onClick={() => setStep("info")}
-                  className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
-                >
-                  ← Edit details
-                </button>
-              </div>
-
-              <div>
-                <Label className="mb-2 block">Card Details</Label>
-                <div className="border border-gray-200 rounded-xl px-3 py-3 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
-                  <CardElement options={cardElementOptions} />
-                </div>
-                {cardError && (
-                  <p className="text-red-500 text-xs mt-2">{cardError}</p>
-                )}
-              </div>
-
-              <Button
-                onClick={onPay}
-                size="lg"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-md"
-                disabled={paying || !stripe}
-              >
-                {paying ? (
-                  "Processing..."
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    <Lock className="w-4 h-4" />
-                    Pay {formatCurrency(total)}
-                  </span>
-                )}
-              </Button>
-              <p className="text-xs text-gray-400 text-center">Secured by Stripe. Your card details are never stored on our servers.</p>
-            </div>
+          {step === "payment" && clientSecret && orderId && (
+            <Elements
+              stripe={stripePromise}
+              options={{ clientSecret, appearance: { theme: "stripe" } }}
+            >
+              <PaymentStep
+                orderId={orderId}
+                total={total}
+                customerName={getValues("customerName")}
+                customerEmail={getValues("customerEmail")}
+                postcode={getValues("postcode")}
+                onBack={() => setStep("info")}
+                onSuccess={() => {
+                  clearCart();
+                  router.push(`/order-success?orderId=${orderId}`);
+                }}
+              />
+            </Elements>
           )}
         </div>
 
@@ -255,6 +183,100 @@ function CheckoutForm() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function PaymentStep({
+  orderId,
+  total,
+  customerName,
+  customerEmail,
+  postcode,
+  onBack,
+  onSuccess,
+}: {
+  orderId: string;
+  total: number;
+  customerName: string;
+  customerEmail: string;
+  postcode: string;
+  onBack: () => void;
+  onSuccess: () => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [paying, setPaying] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  async function onPay() {
+    if (!stripe || !elements) return;
+
+    setPaying(true);
+    setPaymentError(null);
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/order-success?orderId=${orderId}`,
+      },
+      redirect: "if_required",
+    });
+
+    if (error) {
+      setPaymentError(error.message ?? "Payment failed. Please try again.");
+      setPaying(false);
+      return;
+    }
+
+    onSuccess();
+  }
+
+  return (
+    <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-lg md:text-xl font-semibold text-gray-900">Payment</h2>
+        <button
+          onClick={onBack}
+          className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+        >
+          ← Edit details
+        </button>
+      </div>
+
+      <div>
+        <PaymentElement
+          options={{
+            defaultValues: {
+              billingDetails: {
+                name: customerName,
+                email: customerEmail,
+                address: { postal_code: postcode, country: "GB" },
+              },
+            },
+          }}
+        />
+        {paymentError && (
+          <p className="text-red-500 text-xs mt-2">{paymentError}</p>
+        )}
+      </div>
+
+      <Button
+        onClick={onPay}
+        size="lg"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+        disabled={paying || !stripe}
+      >
+        {paying ? (
+          "Processing..."
+        ) : (
+          <span className="flex items-center justify-center gap-2">
+            <Lock className="w-4 h-4" />
+            Pay {formatCurrency(total)}
+          </span>
+        )}
+      </Button>
+      <p className="text-xs text-gray-400 text-center">Secured by Stripe. Your card details are never stored on our servers.</p>
     </div>
   );
 }

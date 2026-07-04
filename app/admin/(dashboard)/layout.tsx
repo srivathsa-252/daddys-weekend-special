@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { AdminSidebar } from "@/components/admin/sidebar";
 
@@ -8,7 +9,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const session = await getServerSession(authOptions);
 
   if (!session || session.user.role !== "ADMIN") {
-    return <>{children}</>;
+    redirect("/admin/login");
   }
 
   return (
