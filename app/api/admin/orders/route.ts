@@ -84,7 +84,7 @@ export async function PATCH(req: NextRequest) {
         customerName: order.customerName,
         orderNumber: order.orderNumber!,
         items: order.items.map((i) => ({
-          name: i.menuItem?.name ?? "Item",
+          name: i.name || i.menuItem?.name || "Item",
           quantity: i.quantity,
           price: Number(i.price),
         })),
@@ -181,4 +181,26 @@ export async function PATCH(req: NextRequest) {
   }
 
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+}
+
+export async function DELETE(req: NextRequest) {
+  const session = await requireAdmin();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Order ID required" }, { status: 400 });
+
+  const order = await prisma.order.findUnique({ where: { id } });
+  if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+
+  if (order.paymentStatus === "PAID" && order.status !== "CANCELLED" && order.status !== "DELIVERED") {
+    return NextResponse.json(
+      { error: "This order is paid and still active. Cancel it first (the customer is refunded automatically), then delete." },
+      { status: 400 }
+    );
+  }
+
+  await prisma.order.delete({ where: { id } });
+  return NextResponse.json({ message: "Order deleted." });
 }

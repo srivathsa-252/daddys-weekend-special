@@ -115,19 +115,10 @@ export async function DELETE(req: NextRequest) {
   const id = searchParams.get("id");
   if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
-  const orderItemCount = await prisma.orderItem.count({ where: { menuItemId: id } });
+  const item = await prisma.menuItem.findUnique({ where: { id } });
+  if (!item) return NextResponse.json({ error: "Item not found" }, { status: 404 });
 
-  if (orderItemCount > 0) {
-    // Soft delete
-    await prisma.menuItem.update({
-      where: { id },
-      data: { isAvailable: false },
-    });
-    return NextResponse.json({ message: "Item hidden (soft-deleted) to preserve order history." });
-  } else {
-    // Hard delete
-    const item = await prisma.menuItem.findUnique({ where: { id } });
-    await prisma.menuItem.delete({ where: { id } });
-    return NextResponse.json({ message: "Item permanently deleted." });
-  }
+  // Order history keeps its own name/price snapshot; menuItemId is set to null on delete
+  await prisma.menuItem.delete({ where: { id } });
+  return NextResponse.json({ message: "Item permanently deleted." });
 }

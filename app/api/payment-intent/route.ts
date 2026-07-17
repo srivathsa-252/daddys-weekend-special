@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
           const menuItem = menuItems.find((m) => m.id === item.menuItemId)!;
           return {
             menuItemId: item.menuItemId,
+            name: menuItem.name,
             quantity: item.quantity,
             price: menuItem.price,
           };

@@ -12,7 +12,15 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between">
           {/* Logo / Brand Header */}
-          <Link href="/" className="font-sans text-xl font-bold text-gray-900 tracking-tight">
+          <Link href="/" className="flex items-center gap-2.5 font-sans text-xl font-bold text-gray-900 tracking-tight">
+            {/* Drop the logo file at public/logo.png — hidden automatically until it exists */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt=""
+              className="h-9 w-auto"
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+            />
             Daddy&apos;s Kitchen
           </Link>
 
