@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Plus, Edit2, Trash2, Eye, EyeOff, AlertTriangle } from "lucide-react";
+import { Plus, Edit2, Trash2, Eye, EyeOff, AlertTriangle, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +43,7 @@ export default function AdminMenuPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const activeCount = items.filter((i) => i.isAvailable).length;
@@ -58,10 +59,35 @@ export default function AdminMenuPage() {
 
   useEffect(() => { fetchItems(); }, []);
 
+  async function handleImageSelect(file: File | undefined) {
+    if (!file) return;
+    setFormError(null);
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!res.ok) {
+        setFormError(json.error ?? "Upload failed");
+        return;
+      }
+      setForm((f) => ({ ...f, image: json.url }));
+    } catch {
+      setFormError("Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function handleSave() {
     setFormError(null);
-    if (!form.name || !form.description || !form.price || !form.image) {
+    if (!form.name || !form.description || !form.price) {
       setFormError("All fields are required.");
+      return;
+    }
+    if (!form.image) {
+      setFormError("Please upload a photo of the dish.");
       return;
     }
     setSaving(true);
@@ -114,7 +140,7 @@ export default function AdminMenuPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this item? If it has order history it will be hidden rather than removed.")) return;
+    if (!confirm("Permanently delete this item? This cannot be undone. Past orders will keep the item's name and price.")) return;
     const res = await fetch(`/api/admin/menu?id=${id}`, { method: "DELETE" });
     const json = await res.json();
     if (res.ok) {
@@ -199,15 +225,34 @@ export default function AdminMenuPage() {
               </div>
             </div>
 
-            {/* Image URL */}
+            {/* Image upload */}
             <div className="space-y-2">
-              <Label>Image URL</Label>
+              <Label>Photo</Label>
               {form.image && (
                 <div className="relative w-full h-40 rounded-lg overflow-hidden mb-2">
                   <Image src={form.image} alt="Preview" fill className="object-cover" />
                 </div>
               )}
-              <Input value={form.image} onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))} placeholder="Paste image URL (e.g. https://...)" />
+              <label
+                className={`flex items-center justify-center gap-2 w-full rounded-lg border border-dashed px-3 py-4 text-sm cursor-pointer transition-colors ${
+                  uploading
+                    ? "border-gray-200 bg-gray-50 text-gray-400 cursor-wait"
+                    : "border-gray-300 text-gray-600 hover:border-blue-500 hover:text-blue-600"
+                }`}
+              >
+                <ImageIcon className="w-4 h-4" />
+                {uploading ? "Uploading..." : form.image ? "Change photo" : "Upload a photo (PNG, JPG or WebP, max 5MB)"}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  disabled={uploading}
+                  onChange={(e) => {
+                    handleImageSelect(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
             </div>
 
             <div className="flex items-center gap-4">
@@ -243,7 +288,7 @@ export default function AdminMenuPage() {
             )}
 
             <div className="flex gap-3 pt-2">
-              <Button onClick={handleSave} disabled={saving} className="flex-1">
+              <Button onClick={handleSave} disabled={saving || uploading} className="flex-1">
                 {saving ? "Saving..." : editId ? "Save Changes" : "Create Item"}
               </Button>
               <Button variant="secondary" onClick={() => { setShowForm(false); setEditId(null); }}>

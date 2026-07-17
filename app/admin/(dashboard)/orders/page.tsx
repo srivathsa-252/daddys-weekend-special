@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,9 +22,10 @@ type Action = "CONFIRM" | "CANCEL" | "MARK_DELIVERED";
 
 interface OrderItem {
   id: string;
+  name: string;
   quantity: number;
   price: number;
-  menuItem?: { name: string };
+  menuItem?: { name: string } | null;
 }
 
 interface Order {
@@ -121,26 +122,48 @@ function PendingAction({
   }
   if (order.status === "CONFIRMED") {
     return (
-      <Button
-        size="sm"
-        className="h-7 px-3 text-xs"
-        onClick={() => onAssign(order.id, order.orderNumber)}
-        disabled={!!actionLoading}
-      >
-        Assign Partner
-      </Button>
+      <div className="flex items-center gap-1.5">
+        <Button
+          size="sm"
+          className="h-7 px-3 text-xs"
+          onClick={() => onAssign(order.id, order.orderNumber)}
+          disabled={!!actionLoading}
+        >
+          Assign Partner
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 px-2 text-xs text-red-500 hover:bg-red-50 hover:text-red-600"
+          onClick={() => onAction(order.id, "CANCEL")}
+          disabled={!!actionLoading}
+        >
+          {actionLoading === order.id + "CANCEL" ? "…" : "Cancel"}
+        </Button>
+      </div>
     );
   }
   if (order.status === "PARTNER_ASSIGNED") {
     return (
-      <Button
-        size="sm"
-        className="h-7 px-3 text-xs"
-        onClick={() => onAction(order.id, "MARK_DELIVERED")}
-        disabled={!!actionLoading}
-      >
-        {actionLoading === order.id + "MARK_DELIVERED" ? "…" : "Mark Delivered"}
-      </Button>
+      <div className="flex items-center gap-1.5">
+        <Button
+          size="sm"
+          className="h-7 px-3 text-xs"
+          onClick={() => onAction(order.id, "MARK_DELIVERED")}
+          disabled={!!actionLoading}
+        >
+          {actionLoading === order.id + "MARK_DELIVERED" ? "…" : "Mark Delivered"}
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 px-2 text-xs text-red-500 hover:bg-red-50 hover:text-red-600"
+          onClick={() => onAction(order.id, "CANCEL")}
+          disabled={!!actionLoading}
+        >
+          {actionLoading === order.id + "CANCEL" ? "…" : "Cancel"}
+        </Button>
+      </div>
     );
   }
   // DELIVERED or CANCELLED — nothing pending
@@ -173,6 +196,9 @@ export default function AdminOrdersPage() {
   }, [fetchOrders]);
 
   async function handleAction(orderId: string, action: Action) {
+    if (action === "CANCEL" && !confirm("Cancel this order? If it has been paid, the customer will be refunded automatically.")) {
+      return;
+    }
     setActionLoading(orderId + action);
     const res = await fetch(`/api/admin/orders?id=${orderId}`, {
       method: "PATCH",
@@ -191,6 +217,23 @@ export default function AdminOrdersPage() {
 
   function openAssign(id: string, num: number) {
     setAssignModal({ id, orderNumber: num });
+  }
+
+  async function handleDelete(orderId: string) {
+    if (!confirm("Permanently delete this order? This removes it from history and cannot be undone. No refund is issued by deleting.")) {
+      return;
+    }
+    setActionLoading(orderId + "DELETE");
+    const res = await fetch(`/api/admin/orders?id=${orderId}`, { method: "DELETE" });
+    const json = await res.json();
+    setActionLoading(null);
+    if (res.ok) {
+      toast.success("Order deleted");
+      setExpanded(null);
+      fetchOrders();
+    } else {
+      toast.error(json.error ?? "Delete failed");
+    }
   }
 
   return (
@@ -365,7 +408,7 @@ export default function AdminOrdersPage() {
                           {order.items.map((item) => (
                             <div key={item.id} className="flex justify-between text-sm">
                               <span className="text-gray-600">
-                                {item.menuItem?.name ?? "Item"} × {item.quantity}
+                                {item.name || item.menuItem?.name || "Item"} × {item.quantity}
                               </span>
                               <span className="text-gray-900">
                                 {formatCurrency(Number(item.price) * item.quantity)}
@@ -392,6 +435,20 @@ export default function AdminOrdersPage() {
                           Cancelled
                         </div>
                       )}
+
+                      {/* Danger zone */}
+                      <div className="flex justify-end border-t border-gray-100 pt-3">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs text-red-500 hover:bg-red-50 hover:text-red-600"
+                          onClick={() => handleDelete(order.id)}
+                          disabled={!!actionLoading}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          {actionLoading === order.id + "DELETE" ? "Deleting…" : "Delete Order"}
+                        </Button>
+                      </div>
                     </div>
                   )}
 
