@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
-import { ShoppingCart, Check } from "lucide-react";
+import { ShoppingCart, Check, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/hooks/use-cart";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -20,29 +21,40 @@ export function MenuCard({ item }: { item: MenuItemType }) {
   }
 
   return (
-    <div className="flex flex-row md:flex-col bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow p-3 md:p-0 gap-4 md:gap-0">
-      {/* Image container */}
-      <div className="relative w-24 h-24 md:w-full md:h-52 rounded-xl md:rounded-none overflow-hidden flex-shrink-0">
+    <div className="group flex flex-row md:flex-col bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow p-3 md:p-0 gap-4 md:gap-0">
+      {/* Image container — links to the product page */}
+      <Link
+        href={`/menu/${item.id}`}
+        className="relative block w-24 h-24 md:w-full md:h-52 rounded-xl md:rounded-none overflow-hidden flex-shrink-0"
+      >
         <Image
           src={item.image}
           alt={item.name}
           fill
-          className="object-cover transition-transform duration-500 hover:scale-105"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
           sizes="(max-width: 768px) 96px, 250px"
         />
+        {/* Hover overlay — desktop */}
+        <div className="hidden md:flex absolute inset-0 z-10 items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors">
+          <span className="flex items-center gap-1.5 bg-white/95 text-gray-900 text-xs font-bold px-3 py-1.5 rounded-full shadow-sm opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200">
+            <Eye className="w-3.5 h-3.5" /> View Details
+          </span>
+        </div>
         {/* Price tag on desktop */}
         <div className="hidden md:block absolute bottom-3 right-3 z-10">
           <span className="bg-blue-600 text-white font-bold text-sm px-3 py-1 rounded-full shadow-sm">
             {formatCurrency(item.price)}
           </span>
         </div>
-      </div>
+      </Link>
 
       {/* Content container */}
       <div className="flex flex-col flex-1 gap-2 md:p-5 justify-between">
         <div className="space-y-1">
           <div className="flex justify-between items-start gap-2">
-            <h3 className="font-semibold text-gray-900 text-sm md:text-lg leading-tight line-clamp-2">{item.name}</h3>
+            <Link href={`/menu/${item.id}`} className="hover:text-blue-600 transition-colors">
+              <h3 className="font-semibold text-gray-900 text-sm md:text-lg leading-tight line-clamp-2 hover:text-blue-600 transition-colors">{item.name}</h3>
+            </Link>
             {/* Price tag on mobile */}
             <span className="md:hidden text-blue-600 font-bold text-sm whitespace-nowrap">
               {formatCurrency(item.price)}
