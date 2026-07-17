@@ -15,11 +15,15 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
+        // Tolerate stray whitespace from copy-pasted credentials
+        const email = credentials.email.trim().toLowerCase();
+        const password = credentials.password.trim();
+        if (!email || !password) return null;
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email },
         });
         if (!user) return null;
-        const valid = await bcrypt.compare(credentials.password, user.password);
+        const valid = await bcrypt.compare(password, user.password);
         if (!valid) return null;
         return { id: user.id, email: user.email, role: user.role };
       },
