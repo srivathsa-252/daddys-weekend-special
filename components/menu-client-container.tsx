@@ -75,12 +75,13 @@ export function MenuClientContainer({ initialItems }: MenuClientContainerProps) 
             Limited Time
           </span>
         </div>
-        <div className="relative h-48 w-full rounded-xl overflow-hidden shadow-inner">
+        <div className="relative w-full aspect-[1751/898] rounded-xl overflow-hidden shadow-inner">
           <Image
-            src="/starry-sky-banner.png"
-            alt="Summer Specials Banner"
+            src="/banner1.png"
+            alt="Weekend Specials Banner"
             fill
-            className="object-cover object-bottom"
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 1200px"
             priority
           />
         </div>
