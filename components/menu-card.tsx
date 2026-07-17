@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { ShoppingCart, Check, Eye } from "lucide-react";
+import { ShoppingCart, Check, Eye, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/hooks/use-cart";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -10,9 +10,11 @@ import { ProductModal } from "@/components/product-modal";
 import type { MenuItemType } from "@/types";
 
 export function MenuCard({ item }: { item: MenuItemType }) {
-  const { addItem } = useCart();
+  const { addItem, items, updateQty, removeItem } = useCart();
   const [added, setAdded] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+
+  const cartItem = items.find((i) => i.id === item.id);
 
   function handleAdd() {
     addItem({ id: item.id, name: item.name, price: item.price, image: item.image, quantity: 1 });
@@ -75,21 +77,47 @@ export function MenuCard({ item }: { item: MenuItemType }) {
             </p>
           </div>
 
-          <button
-            onClick={handleAdd}
-            className={cn(
-              "w-full mt-1.5 md:mt-4 py-2 px-4 rounded-xl text-xs md:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm",
-              added
-                ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
-                : "bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98]"
-            )}
-          >
-            {added ? (
-              <><Check className="w-4 h-4" /> Added</>
-            ) : (
-              <><ShoppingCart className="w-4 h-4" /> Add to Cart</>
-            )}
-          </button>
+          {cartItem ? (
+            <div className="w-full mt-1.5 md:mt-4 flex items-center justify-between rounded-xl border border-blue-200 bg-blue-50 px-2 py-1.5 md:py-2 shadow-sm">
+              <button
+                onClick={() =>
+                  cartItem.quantity <= 1
+                    ? removeItem(item.id)
+                    : updateQty(item.id, cartItem.quantity - 1)
+                }
+                aria-label={`Remove one ${item.name}`}
+                className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center rounded-lg bg-white text-blue-600 border border-blue-200 hover:bg-blue-100 active:scale-95 transition-all"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+              <span className="text-xs md:text-sm font-bold text-blue-700">
+                {cartItem.quantity} in cart
+              </span>
+              <button
+                onClick={() => updateQty(item.id, cartItem.quantity + 1)}
+                aria-label={`Add one more ${item.name}`}
+                className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 active:scale-95 transition-all"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleAdd}
+              className={cn(
+                "w-full mt-1.5 md:mt-4 py-2 px-4 rounded-xl text-xs md:text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm",
+                added
+                  ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                  : "bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98]"
+              )}
+            >
+              {added ? (
+                <><Check className="w-4 h-4" /> Added</>
+              ) : (
+                <><ShoppingCart className="w-4 h-4" /> Add to Cart</>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </>
