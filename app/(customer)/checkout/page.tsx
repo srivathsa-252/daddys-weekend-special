@@ -20,7 +20,13 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
 const checkoutSchema = z.object({
   customerName: z.string().min(2, "Name must be at least 2 characters").max(100),
   customerEmail: z.string().email("Invalid email address"),
-  customerPhone: z.string().regex(/^\+?[\d\s\-().]{7,20}$/, "Invalid phone number"),
+  customerPhone: z
+    .string()
+    .regex(/^[\d\s]+$/, "Digits only — the +44 is already added")
+    .refine((v) => {
+      const digits = v.replace(/\D/g, "").replace(/^0/, "");
+      return digits.length === 9 || digits.length === 10;
+    }, "Enter a valid UK number, e.g. 7700 900000"),
   addressLine1: z.string().min(3, "Address line 1 is required").max(200),
   city: z.string().min(2, "City is required").max(100),
   postcode: z.string().regex(/^[A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2}$/i, "Enter a valid UK postcode"),
@@ -66,11 +72,13 @@ function CheckoutFlow() {
     setLoading(true);
     setError(null);
     try {
+      const ukPhone = "+44 " + data.customerPhone.replace(/\D/g, "").replace(/^0/, "");
       const res = await fetch("/api/payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...data,
+          customerPhone: ukPhone,
           items: items.map((i) => ({ menuItemId: i.id, quantity: i.quantity })),
         }),
       });
@@ -113,8 +121,20 @@ function CheckoutFlow() {
                 {errors.customerEmail && <p className="text-red-500 text-xs">{errors.customerEmail.message}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="customerPhone">Phone Number</Label>
-                <Input id="customerPhone" placeholder="+44 7700 900000" {...register("customerPhone")} />
+                <Label htmlFor="customerPhone">Phone Number (UK)</Label>
+                <div className="flex items-stretch rounded-lg border border-gray-200 bg-white focus-within:ring-2 focus-within:ring-blue-600/30 focus-within:border-blue-600 transition-colors overflow-hidden">
+                  <span className="flex items-center px-3 bg-gray-50 border-r border-gray-200 text-gray-500 text-sm font-medium select-none">
+                    +44
+                  </span>
+                  <input
+                    id="customerPhone"
+                    type="tel"
+                    inputMode="numeric"
+                    placeholder="7700 900000"
+                    className="flex-1 min-w-0 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none bg-transparent"
+                    {...register("customerPhone")}
+                  />
+                </div>
                 {errors.customerPhone && <p className="text-red-500 text-xs">{errors.customerPhone.message}</p>}
               </div>
 
